@@ -10,34 +10,42 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import ProductCard from "@/components/ProductCard";
-import { products, testimonials } from "@/lib/data";
-
-const featuredProducts = products.slice(0, 4);
-
-const benefits = [
-  {
-    icon: Leaf,
-    title: "100% Natural",
-    desc: "Every ingredient sourced from nature — no chemicals, ever.",
-  },
-  {
-    icon: Droplets,
-    title: "Handcrafted",
-    desc: "Made in small batches with love and traditional recipes.",
-  },
-  {
-    icon: Heart,
-    title: "Eco-Friendly",
-    desc: "Biodegradable packaging and sustainable practices.",
-  },
-  {
-    icon: Sparkles,
-    title: "Chemical-Free",
-    desc: "No parabens, sulphates, or artificial fragrances.",
-  },
-];
+import { testimonials } from "@/lib/data";
+import { useEffect, useState } from "react";
+import { fetchProducts } from "@/lib/api";
 
 export default function Index() {
+  const [products, setProducts] = useState([]);
+  useEffect(() => {
+    fetchProducts().then((data) => {
+      setProducts(data);
+      // setLoading(false);
+    });
+  }, []);
+  const featuredProducts = products.slice(0, 4);
+
+  const benefits = [
+    {
+      icon: Leaf,
+      title: "100% Natural",
+      desc: "Every ingredient sourced from nature — no chemicals, ever.",
+    },
+    {
+      icon: Droplets,
+      title: "Handcrafted",
+      desc: "Made in small batches with love and traditional recipes.",
+    },
+    {
+      icon: Heart,
+      title: "Eco-Friendly",
+      desc: "Biodegradable packaging and sustainable practices.",
+    },
+    {
+      icon: Sparkles,
+      title: "Chemical-Free",
+      desc: "No parabens, sulphates, or artificial fragrances.",
+    },
+  ];
   return (
     <div>
       {/* Hero */}
