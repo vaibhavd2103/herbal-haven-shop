@@ -1,5 +1,12 @@
 import { Link } from "react-router-dom";
-import { Leaf, Droplets, Heart, Sparkles, Star, ArrowRight } from "lucide-react";
+import {
+  Leaf,
+  Droplets,
+  Heart,
+  Sparkles,
+  Star,
+  ArrowRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import ProductCard from "@/components/ProductCard";
@@ -8,10 +15,26 @@ import { products, testimonials } from "@/lib/data";
 const featuredProducts = products.slice(0, 4);
 
 const benefits = [
-  { icon: Leaf, title: "100% Natural", desc: "Every ingredient sourced from nature — no chemicals, ever." },
-  { icon: Droplets, title: "Handcrafted", desc: "Made in small batches with love and traditional recipes." },
-  { icon: Heart, title: "Eco-Friendly", desc: "Biodegradable packaging and sustainable practices." },
-  { icon: Sparkles, title: "Chemical-Free", desc: "No parabens, sulphates, or artificial fragrances." },
+  {
+    icon: Leaf,
+    title: "100% Natural",
+    desc: "Every ingredient sourced from nature — no chemicals, ever.",
+  },
+  {
+    icon: Droplets,
+    title: "Handcrafted",
+    desc: "Made in small batches with love and traditional recipes.",
+  },
+  {
+    icon: Heart,
+    title: "Eco-Friendly",
+    desc: "Biodegradable packaging and sustainable practices.",
+  },
+  {
+    icon: Sparkles,
+    title: "Chemical-Free",
+    desc: "No parabens, sulphates, or artificial fragrances.",
+  },
 ];
 
 export default function Index() {
@@ -30,16 +53,21 @@ export default function Index() {
               <Leaf className="h-4 w-4" /> Homemade Herbal Goodness
             </div>
             <h1 className="font-serif text-4xl font-bold leading-tight text-primary-foreground md:text-6xl">
-              Pure. Natural.
-              <br />
-              <span className="text-accent-foreground">Handcrafted.</span>
+              Natural homemade products that make daily care feel simple, safe,
+              and beautiful.
             </h1>
             <p className="mt-4 text-lg text-primary-foreground/70 md:text-xl">
-              Discover RREVA CARE's range of homemade herbal products — shampoos, soaps, face washes & more, made with love from nature's finest ingredients.
+              Discover RREVA CARE's range of homemade herbal products —
+              shampoos, soaps, face washes & more, made with love from nature's
+              finest ingredients.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link to="/products">
-                <Button size="lg" variant="secondary" className="gap-2 text-base">
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="gap-2 text-base"
+                >
                   Shop Now <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
@@ -51,18 +79,25 @@ export default function Index() {
       {/* Benefits */}
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4">
-          <h2 className="mb-2 text-center font-serif text-3xl font-bold">Why Choose Herbal?</h2>
+          <h2 className="mb-2 text-center font-serif text-3xl font-bold">
+            Why Choose Herbal?
+          </h2>
           <p className="mb-12 text-center text-muted-foreground">
             Nature has everything your body needs
           </p>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {benefits.map((b) => (
-              <Card key={b.title} className="text-center transition-shadow hover:shadow-md">
+              <Card
+                key={b.title}
+                className="text-center transition-shadow hover:shadow-md"
+              >
                 <CardContent className="pt-6">
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-herb-light">
                     <b.icon className="h-7 w-7 text-primary" />
                   </div>
-                  <h3 className="font-serif text-lg font-semibold">{b.title}</h3>
+                  <h3 className="font-serif text-lg font-semibold">
+                    {b.title}
+                  </h3>
                   <p className="mt-2 text-sm text-muted-foreground">{b.desc}</p>
                 </CardContent>
               </Card>
@@ -76,10 +111,17 @@ export default function Index() {
         <div className="container mx-auto px-4">
           <div className="mb-12 flex items-end justify-between">
             <div>
-              <h2 className="font-serif text-3xl font-bold">Featured Products</h2>
-              <p className="mt-1 text-muted-foreground">Our most loved herbal essentials</p>
+              <h2 className="font-serif text-3xl font-bold">
+                Featured Products
+              </h2>
+              <p className="mt-1 text-muted-foreground">
+                Our most loved herbal essentials
+              </p>
             </div>
-            <Link to="/products" className="hidden text-sm font-medium text-primary hover:underline sm:block">
+            <Link
+              to="/products"
+              className="hidden text-sm font-medium text-primary hover:underline sm:block"
+            >
               View All →
             </Link>
           </div>
@@ -99,19 +141,30 @@ export default function Index() {
       {/* Testimonials */}
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4">
-          <h2 className="mb-2 text-center font-serif text-3xl font-bold">What Our Customers Say</h2>
-          <p className="mb-12 text-center text-muted-foreground">Real stories from real people</p>
+          <h2 className="mb-2 text-center font-serif text-3xl font-bold">
+            What Our Customers Say
+          </h2>
+          <p className="mb-12 text-center text-muted-foreground">
+            Real stories from real people
+          </p>
           <div className="grid gap-6 md:grid-cols-3">
             {testimonials.map((t) => (
               <Card key={t.id} className="transition-shadow hover:shadow-md">
                 <CardContent className="pt-6">
                   <div className="mb-3 flex gap-0.5">
                     {Array.from({ length: t.rating }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-accent text-accent" />
+                      <Star
+                        key={i}
+                        className="h-4 w-4 fill-accent text-accent"
+                      />
                     ))}
                   </div>
-                  <p className="text-sm text-muted-foreground italic">"{t.text}"</p>
-                  <p className="mt-4 font-serif text-sm font-semibold">{t.name}</p>
+                  <p className="text-sm text-muted-foreground italic">
+                    "{t.text}"
+                  </p>
+                  <p className="mt-4 font-serif text-sm font-semibold">
+                    {t.name}
+                  </p>
                 </CardContent>
               </Card>
             ))}
