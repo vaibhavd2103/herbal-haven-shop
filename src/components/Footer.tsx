@@ -12,16 +12,29 @@ export default function Footer() {
               <span className="font-serif text-lg font-bold">RREVA CARE</span>
             </div>
             <p className="text-sm text-primary-foreground/70">
-              Pure. Natural. Handcrafted. Homemade herbal products for a healthier you.
+              Pure. Natural. Handcrafted. Homemade herbal products for a
+              healthier you.
             </p>
           </div>
 
           <div>
             <h4 className="mb-3 font-serif font-semibold">Quick Links</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/70">
-              <li><Link to="/" className="hover:text-primary-foreground">Home</Link></li>
-              <li><Link to="/products" className="hover:text-primary-foreground">Products</Link></li>
-              <li><Link to="/cart" className="hover:text-primary-foreground">Cart</Link></li>
+              <li>
+                <Link to="/" className="hover:text-primary-foreground">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link to="/products" className="hover:text-primary-foreground">
+                  Products
+                </Link>
+              </li>
+              <li>
+                <Link to="/cart" className="hover:text-primary-foreground">
+                  Cart
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -38,9 +51,9 @@ export default function Footer() {
           <div>
             <h4 className="mb-3 font-serif font-semibold">Contact</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/70">
-              <li>hello@rrevacare.com</li>
-              <li>+91 98765 43210</li>
-              <li>India</li>
+              <li>rrevacare@gmail.com</li>
+              <li>+91 8766749107</li>
+              <li>Pune, India</li>
             </ul>
           </div>
         </div>

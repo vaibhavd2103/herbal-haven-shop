@@ -14,8 +14,12 @@ export default function Cart() {
       <div className="container mx-auto flex flex-col items-center px-4 py-20 text-center">
         <ShoppingBag className="mb-4 h-16 w-16 text-muted-foreground/40" />
         <h1 className="font-serif text-2xl font-bold">Your Cart is Empty</h1>
-        <p className="mt-2 text-muted-foreground">Add some herbal goodness to your cart!</p>
-        <Link to="/products"><Button className="mt-6">Browse Products</Button></Link>
+        <p className="mt-2 text-muted-foreground">
+          Add some herbal goodness to your cart!
+        </p>
+        <Link to="/products">
+          <Button className="mt-6">Browse Products</Button>
+        </Link>
       </div>
     );
   }
@@ -29,27 +33,48 @@ export default function Cart() {
           {items.map(({ product, quantity }) => (
             <Card key={product.id}>
               <CardContent className="flex items-center gap-4 p-4">
-                <div className="h-20 w-20 flex-shrink-0 rounded-md bg-secondary flex items-center justify-center">
-                  <img src={product.image} alt={product.name} className="h-12 w-12 object-contain opacity-60" />
+                <div className="h-20 w-20 flex-shrink-0 rounded-md bg-secondary flex items-center justify-center p-2">
+                  <img
+                    src={product.imageUrls[0]}
+                    alt={product.name}
+                    className="h-full w-full object-cover opacity-60 rounded-sm"
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <Link to={`/products/${product.id}`} className="font-serif text-sm font-semibold hover:text-primary line-clamp-1">
+                  <Link
+                    to={`/products/${product.id}`}
+                    className="font-serif text-sm font-semibold hover:text-primary line-clamp-1"
+                  >
                     {product.name}
                   </Link>
-                  <p className="text-xs text-muted-foreground">{product.category}</p>
-                  <p className="mt-1 font-serif font-bold text-primary">₹{product.price}</p>
+                  {/* <p className="text-xs text-muted-foreground">
+                    {product.currency}
+                  </p> */}
+                  <p className="mt-1 font-serif font-bold text-primary">
+                    ₹{product.price}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center rounded-md border">
-                    <button className="px-2 py-1 hover:bg-secondary" onClick={() => updateQuantity(product.id, quantity - 1)}>
+                    <button
+                      className="px-2 py-1 hover:bg-secondary"
+                      onClick={() => updateQuantity(product.id, quantity - 1)}
+                    >
                       <Minus className="h-3 w-3" />
                     </button>
                     <span className="w-8 text-center text-sm">{quantity}</span>
-                    <button className="px-2 py-1 hover:bg-secondary" onClick={() => updateQuantity(product.id, quantity + 1)}>
+                    <button
+                      className="px-2 py-1 hover:bg-secondary"
+                      onClick={() => updateQuantity(product.id, quantity + 1)}
+                    >
                       <Plus className="h-3 w-3" />
                     </button>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => removeFromCart(product.id)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeFromCart(product.id)}
+                  >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
@@ -64,16 +89,29 @@ export default function Cart() {
             <h2 className="font-serif text-lg font-bold">Order Summary</h2>
             <Separator className="my-4" />
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>₹{totalPrice}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span>{shipping === 0 ? "Free" : `₹${shipping}`}</span></div>
-              {shipping > 0 && <p className="text-xs text-muted-foreground">Free shipping on orders above ₹500</p>}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>₹{totalPrice}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Shipping</span>
+                <span>{shipping === 0 ? "Free" : `₹${shipping}`}</span>
+              </div>
+              {shipping > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Free shipping on orders above ₹500
+                </p>
+              )}
               <Separator />
               <div className="flex justify-between font-serif text-lg font-bold">
-                <span>Total</span><span className="text-primary">₹{totalPrice + shipping}</span>
+                <span>Total</span>
+                <span className="text-primary">₹{totalPrice + shipping}</span>
               </div>
             </div>
             <Link to="/checkout">
-              <Button className="mt-6 w-full gap-2">Proceed to Pay <ArrowRight className="h-4 w-4" /></Button>
+              <Button className="mt-6 w-full gap-2">
+                Proceed to Pay <ArrowRight className="h-4 w-4" />
+              </Button>
             </Link>
           </CardContent>
         </Card>
