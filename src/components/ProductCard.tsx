@@ -22,7 +22,7 @@ export default function ProductCard({ product }: { product: Product }) {
           <img
             src={product.imageUrls[0]}
             alt={product.name}
-            className="h-full w-full object-cover opacity-60 transition-all group-hover:scale-110 group-hover:opacity-100"
+            className="h-full w-full object-cover opacity-80 transition-all group-hover:scale-110 group-hover:opacity-100"
           />
         </div>
         <CardContent className="p-4">

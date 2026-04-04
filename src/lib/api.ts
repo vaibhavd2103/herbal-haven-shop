@@ -9,21 +9,19 @@ const api = axios.create({
 });
 
 export async function fetchProducts(): Promise<Product[]> {
-  // TODO: Replace with actual API call
-  // const res = await fetch("/api/products");
-  // return res.json();
   const res = await api.get("/products");
   return res.data.products;
-  // return new Promise((resolve) => setTimeout(() => resolve(products), 300));
 }
 
 export async function fetchProductById(
   id: string,
 ): Promise<Product | undefined> {
-  // TODO: Replace with actual API call
-  return new Promise((resolve) =>
-    setTimeout(() => resolve(products.find((p) => p.id === id)), 200),
-  );
+  // // TODO: Replace with actual API call
+  // return new Promise((resolve) =>
+  //   setTimeout(() => resolve(products.find((p) => p.id === id)), 200),
+  // );
+  const res = await api.get(`/products/${id}`);
+  return res.data.product;
 }
 
 export async function loginUser(email: string, _password: string) {
