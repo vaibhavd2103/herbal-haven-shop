@@ -1,9 +1,21 @@
-import React, { createContext, useContext, useState, type ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  type ReactNode,
+} from "react";
 
-interface User {
+export interface LoginResponse {
+  token: string;
+  user: User;
+}
+
+export interface User {
   id: string;
   email: string;
+  role: string;
   name: string;
+  profileImageUrl: string;
 }
 
 interface AuthContextType {
@@ -36,7 +48,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, isAuthenticated: !!user, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

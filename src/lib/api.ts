@@ -1,3 +1,4 @@
+import { LoginResponse } from "@/contexts/AuthContext";
 import { products, type Product } from "./data";
 
 // Placeholder API calls — replace with real endpoints when backend is ready
@@ -16,30 +17,26 @@ export async function fetchProducts(): Promise<Product[]> {
 export async function fetchProductById(
   id: string,
 ): Promise<Product | undefined> {
-  // // TODO: Replace with actual API call
-  // return new Promise((resolve) =>
-  //   setTimeout(() => resolve(products.find((p) => p.id === id)), 200),
-  // );
   const res = await api.get(`/products/${id}`);
   return res.data.product;
 }
 
-export async function loginUser(email: string, _password: string) {
-  // TODO: Replace with actual API call
-  return new Promise((resolve) =>
-    setTimeout(() => resolve({ id: "user-1", email, name: "User" }), 500),
-  );
+export async function loginUser(email: string, password: string) {
+  const res = (await api.post("/auth/login", { email, password })) as {
+    data: LoginResponse;
+  };
+  return res.data;
 }
 
 export async function signupUser(
   name: string,
   email: string,
-  _password: string,
+  password: string,
 ) {
-  // TODO: Replace with actual API call
-  return new Promise((resolve) =>
-    setTimeout(() => resolve({ id: "user-1", email, name }), 500),
-  );
+  const res = (await api.post("/auth/signup", { name, email, password })) as {
+    data: LoginResponse;
+  };
+  return res.data;
 }
 
 export async function submitPaymentConfirmation(orderId: string) {
