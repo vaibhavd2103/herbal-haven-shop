@@ -20,8 +20,9 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   isAuthenticated: boolean;
-  login: (user: User) => void;
+  login: (user: User, token: string) => void;
   logout: () => void;
 }
 
@@ -37,19 +38,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  const login = (u: User) => {
+  const [token, setToken] = useState<string | null>(() => {
+    return localStorage.getItem("rreva-token");
+  });
+
+  const login = (u: User, t: string) => {
     setUser(u);
+    setToken(t);
     localStorage.setItem("rreva-user", JSON.stringify(u));
+    localStorage.setItem("rreva-token", t);
   };
 
   const logout = () => {
     setUser(null);
+    setToken(null);
     localStorage.removeItem("rreva-user");
+    localStorage.removeItem("rreva-token");
+    localStorage.removeItem("rreva-cart");
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, isAuthenticated: !!user, login, logout }}
+      value={{ user, token, isAuthenticated: !!user && !!token, login, logout }}
     >
       {children}
     </AuthContext.Provider>

@@ -2,18 +2,13 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Leaf, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { loginUser } from "@/lib/api";
 import { toast } from "sonner";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -31,7 +26,7 @@ export default function Login() {
     setLoading(true);
     try {
       const response = await loginUser(email, password);
-      login(response.user);
+      login(response.user, response.token);
       toast.success("Welcome back!");
       navigate("/");
     } catch {
@@ -64,29 +59,25 @@ export default function Login() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link to="/forgot-password" className="text-xs text-primary hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
+              <PasswordInput
                 id="password"
-                type="password"
-                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Sign In"
-              )}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign In"}
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Don't have an account?{" "}
-            <Link
-              to="/signup"
-              className="font-medium text-primary hover:underline"
-            >
+            <Link to="/signup" className="font-medium text-primary hover:underline">
               Sign Up
             </Link>
           </p>

@@ -1,16 +1,24 @@
-import { Link } from "react-router-dom";
-import { ShoppingCart, Star } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import type { Product } from "@/lib/data";
 import { toast } from "sonner";
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (!isAuthenticated) {
+      toast.error("Please login to add items to cart");
+      navigate("/login");
+      return;
+    }
     addToCart(product);
     toast.success(`${product.name} added to cart`);
   };
@@ -26,14 +34,10 @@ export default function ProductCard({ product }: { product: Product }) {
           />
         </div>
         <CardContent className="p-4">
-          {/* <span className="mb-1 inline-block rounded-full bg-herb-light px-2 py-0.5 text-[10px] font-medium text-primary">
-            {product.currency}
-          </span> */}
           <h3 className="font-serif text-sm font-semibold leading-tight line-clamp-2">
             {product.name}
           </h3>
           <div className="mt-1 flex items-center gap-1">
-            {/* <Star className="h-3 w-3 fill-accent text-accent" /> */}
             <span className="text-xs text-muted-foreground">
               {product.isActive ? "In Stock" : "Out of Stock"}
             </span>

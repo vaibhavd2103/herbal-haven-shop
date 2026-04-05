@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import type { Product } from "@/lib/data";
+import { useAuth } from "@/contexts/AuthContext";
+import { fetchCart, addToCartAPI, removeFromCartAPI, updateCartQuantityAPI, clearCartAPI } from "@/lib/api";
 
 export interface CartItem {
   product: Product;
@@ -8,64 +10,116 @@ export interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product, quantity?: number) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
-  clearCart: () => void;
+  addToCart: (product: Product, quantity?: number) => Promise<void>;
+  removeFromCart: (productId: string) => Promise<void>;
+  updateQuantity: (productId: string, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
   totalItems: number;
   totalPrice: number;
+  loading: boolean;
+  refreshCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    try {
-      const stored = localStorage.getItem("rreva-cart");
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const { isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    localStorage.setItem("rreva-cart", JSON.stringify(items));
-  }, [items]);
-
-  const addToCart = (product: Product, quantity = 1) => {
-    setItems((prev) => {
-      const existing = prev.find((i) => i.product.id === product.id);
-      if (existing) {
-        return prev.map((i) =>
-          i.product.id === product.id ? { ...i, quantity: i.quantity + quantity } : i
-        );
-      }
-      return [...prev, { product, quantity }];
-    });
+  const syncToLocal = (cartItems: CartItem[]) => {
+    localStorage.setItem("rreva-cart", JSON.stringify(cartItems));
   };
 
-  const removeFromCart = (productId: string) => {
-    setItems((prev) => prev.filter((i) => i.product.id !== productId));
-  };
-
-  const updateQuantity = (productId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(productId);
+  const refreshCart = useCallback(async () => {
+    if (!isAuthenticated) {
+      setItems([]);
       return;
     }
-    setItems((prev) =>
-      prev.map((i) => (i.product.id === productId ? { ...i, quantity } : i))
-    );
+    setLoading(true);
+    try {
+      const cartItems = await fetchCart();
+      setItems(cartItems);
+      syncToLocal(cartItems);
+    } catch {
+      // fallback
+      try {
+        const stored = localStorage.getItem("rreva-cart");
+        setItems(stored ? JSON.parse(stored) : []);
+      } catch {
+        setItems([]);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    refreshCart();
+  }, [refreshCart]);
+
+  const addToCart = async (product: Product, quantity = 1) => {
+    // Optimistic update
+    setItems((prev) => {
+      const existing = prev.find((i) => i.product.id === product.id);
+      const updated = existing
+        ? prev.map((i) =>
+            i.product.id === product.id ? { ...i, quantity: i.quantity + quantity } : i
+          )
+        : [...prev, { product, quantity }];
+      syncToLocal(updated);
+      return updated;
+    });
+    // API call
+    const apiItems = await addToCartAPI(product.id, quantity);
+    if (apiItems.length > 0) {
+      setItems(apiItems);
+      syncToLocal(apiItems);
+    }
   };
 
-  const clearCart = () => setItems([]);
+  const removeFromCart = async (productId: string) => {
+    setItems((prev) => {
+      const updated = prev.filter((i) => i.product.id !== productId);
+      syncToLocal(updated);
+      return updated;
+    });
+    const apiItems = await removeFromCartAPI(productId);
+    if (apiItems.length > 0) {
+      setItems(apiItems);
+      syncToLocal(apiItems);
+    }
+  };
+
+  const updateQuantity = async (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      await removeFromCart(productId);
+      return;
+    }
+    setItems((prev) => {
+      const updated = prev.map((i) => (i.product.id === productId ? { ...i, quantity } : i));
+      syncToLocal(updated);
+      return updated;
+    });
+    const apiItems = await updateCartQuantityAPI(productId, quantity);
+    if (apiItems.length > 0) {
+      setItems(apiItems);
+      syncToLocal(apiItems);
+    }
+  };
+
+  const clearCart = async () => {
+    setItems([]);
+    localStorage.removeItem("rreva-cart");
+    await clearCartAPI();
+  };
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
 
   return (
     <CartContext.Provider
-      value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice }}
+      value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice, loading, refreshCart }}
     >
       {children}
     </CartContext.Provider>
