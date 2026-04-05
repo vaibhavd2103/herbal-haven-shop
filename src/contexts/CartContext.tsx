@@ -21,10 +21,9 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export function CartProvider({ children }: { children: ReactNode }) {
+export function CartProvider({ children, isAuthenticated }: { children: ReactNode; isAuthenticated: boolean }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const { isAuthenticated } = useAuth();
 
   const syncToLocal = (cartItems: CartItem[]) => {
     localStorage.setItem("rreva-cart", JSON.stringify(cartItems));
@@ -41,7 +40,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setItems(cartItems);
       syncToLocal(cartItems);
     } catch {
-      // fallback
       try {
         const stored = localStorage.getItem("rreva-cart");
         setItems(stored ? JSON.parse(stored) : []);
@@ -58,18 +56,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [refreshCart]);
 
   const addToCart = async (product: Product, quantity = 1) => {
-    // Optimistic update
     setItems((prev) => {
       const existing = prev.find((i) => i.product.id === product.id);
       const updated = existing
-        ? prev.map((i) =>
-            i.product.id === product.id ? { ...i, quantity: i.quantity + quantity } : i
-          )
+        ? prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + quantity } : i)
         : [...prev, { product, quantity }];
       syncToLocal(updated);
       return updated;
     });
-    // API call
     const apiItems = await addToCartAPI(product.id, quantity);
     if (apiItems.length > 0) {
       setItems(apiItems);
