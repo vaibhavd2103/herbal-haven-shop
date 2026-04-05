@@ -10,15 +10,23 @@ const api = axios.create({
 });
 
 export async function fetchProducts(): Promise<Product[]> {
-  const res = await api.get("/products");
-  return res.data.products;
+  try {
+    const res = await api.get("/products");
+    return res.data.products ?? products;
+  } catch {
+    return products;
+  }
 }
 
 export async function fetchProductById(
   id: string,
 ): Promise<Product | undefined> {
-  const res = await api.get(`/products/${id}`);
-  return res.data.product;
+  try {
+    const res = await api.get(`/products/${id}`);
+    return res.data.product ?? products.find((p) => p.id === id);
+  } catch {
+    return products.find((p) => p.id === id);
+  }
 }
 
 export async function loginUser(email: string, password: string) {
