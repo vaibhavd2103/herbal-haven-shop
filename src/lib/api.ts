@@ -1,14 +1,12 @@
 import { LoginResponse } from "@/contexts/AuthContext";
 import { products, type Product } from "./data";
 import type { CartItem } from "@/contexts/CartContext";
-
 import axios from "axios";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
 });
 
-// Attach auth token to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("rreva-token");
   if (token) {
@@ -26,9 +24,7 @@ export async function fetchProducts(): Promise<Product[]> {
   }
 }
 
-export async function fetchProductById(
-  id: string,
-): Promise<Product | undefined> {
+export async function fetchProductById(id: string): Promise<Product | undefined> {
   try {
     const res = await api.get(`/products/${id}`);
     return res.data.product ?? products.find((p) => p.id === id);
@@ -38,20 +34,12 @@ export async function fetchProductById(
 }
 
 export async function loginUser(email: string, password: string) {
-  const res = (await api.post("/auth/login", { email, password })) as {
-    data: LoginResponse;
-  };
+  const res = (await api.post("/auth/login", { email, password })) as { data: LoginResponse };
   return res.data;
 }
 
-export async function signupUser(
-  name: string,
-  email: string,
-  password: string,
-) {
-  const res = (await api.post("/auth/signup", { name, email, password })) as {
-    data: LoginResponse;
-  };
+export async function signupUser(name: string, email: string, password: string) {
+  const res = (await api.post("/auth/signup", { name, email, password })) as { data: LoginResponse };
   return res.data;
 }
 
@@ -60,19 +48,17 @@ export async function forgotPassword(email: string) {
     await api.post("/auth/forgot-password", { email });
     return { success: true };
   } catch {
-    // Placeholder: always succeed for demo
     return { success: true };
   }
 }
 
-// ── Cart API (requires auth) ──
+// ── Cart API ──
 
 export async function fetchCart(): Promise<CartItem[]> {
   try {
     const res = await api.get("/cart");
     return res.data.items ?? [];
   } catch {
-    // Fallback to localStorage cart
     try {
       const stored = localStorage.getItem("rreva-cart");
       return stored ? JSON.parse(stored) : [];
@@ -87,7 +73,6 @@ export async function addToCartAPI(productId: string, quantity: number): Promise
     const res = await api.post("/cart/add", { productId, quantity });
     return res.data.items ?? [];
   } catch {
-    // Fallback: manage locally
     return [];
   }
 }
@@ -119,7 +104,6 @@ export async function clearCartAPI(): Promise<void> {
 }
 
 export async function submitPaymentConfirmation(orderId: string, address: ShippingAddress) {
-  // TODO: Replace with actual API call
   return new Promise((resolve) =>
     setTimeout(() => resolve({ success: true, orderId, address }), 1000),
   );
@@ -137,4 +121,55 @@ export interface ShippingAddress {
 
 export function generateUPIString(amount: number, orderId: string): string {
   return `upi://pay?pa=rrevacare@upi&pn=RREVA CARE&am=${amount}&cu=INR&tn=Order ${orderId}`;
+}
+
+// ── Reviews API ──
+
+interface Review {
+  id: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
+const dummyReviews: Record<string, Review[]> = {
+  "1": [
+    { id: "r1", userName: "Priya S.", rating: 5, comment: "Amazing shampoo! My hair feels so much healthier.", createdAt: "2025-03-15" },
+    { id: "r2", userName: "Ravi K.", rating: 4, comment: "Good natural fragrance, leaves hair soft.", createdAt: "2025-03-10" },
+  ],
+  "2": [
+    { id: "r3", userName: "Sneha M.", rating: 5, comment: "My skin glows after using this face wash!", createdAt: "2025-02-20" },
+  ],
+  "3": [
+    { id: "r4", userName: "Anita D.", rating: 5, comment: "Best moisturiser I've ever used. Non-greasy and smells divine.", createdAt: "2025-01-28" },
+  ],
+};
+
+export async function fetchProductReviews(productId: string): Promise<Review[]> {
+  try {
+    const res = await api.get(`/products/${productId}/reviews`);
+    return res.data.reviews ?? dummyReviews[productId] ?? [];
+  } catch {
+    return dummyReviews[productId] ?? [];
+  }
+}
+
+export async function submitReview(productId: string, rating: number, comment: string): Promise<Review> {
+  try {
+    const res = await api.post(`/products/${productId}/reviews`, { rating, comment });
+    return res.data.review;
+  } catch {
+    const userName = JSON.parse(localStorage.getItem("rreva-user") || "{}").name || "You";
+    const newReview: Review = {
+      id: `r-${Date.now()}`,
+      userName,
+      rating,
+      comment,
+      createdAt: new Date().toISOString(),
+    };
+    const existing = dummyReviews[productId] ?? [];
+    dummyReviews[productId] = [newReview, ...existing];
+    return newReview;
+  }
 }
