@@ -1,6 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import type { Product } from "@/lib/data";
-import { fetchCart, addToCartAPI, removeFromCartAPI, updateCartQuantityAPI, clearCartAPI } from "@/lib/api";
+import {
+  fetchCart,
+  addToCartAPI,
+  removeFromCartAPI,
+  updateCartQuantityAPI,
+  clearCartAPI,
+} from "@/lib/api";
 
 export interface CartItem {
   product: Product;
@@ -19,9 +25,27 @@ interface CartContextType {
   refreshCart: () => Promise<void>;
 }
 
-const CartContext = createContext<CartContextType | undefined>(undefined);
+const emptyCartContext: CartContextType = {
+  items: [],
+  addToCart: async () => {},
+  removeFromCart: async () => {},
+  updateQuantity: async () => {},
+  clearCart: async () => {},
+  totalItems: 0,
+  totalPrice: 0,
+  loading: false,
+  refreshCart: async () => {},
+};
 
-export function CartProvider({ children, isAuthenticated }: { children: ReactNode; isAuthenticated: boolean }) {
+const CartContext = createContext<CartContextType>(emptyCartContext);
+
+export function CartProvider({
+  children,
+  isAuthenticated,
+}: {
+  children: ReactNode;
+  isAuthenticated: boolean;
+}) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -34,6 +58,7 @@ export function CartProvider({ children, isAuthenticated }: { children: ReactNod
       setItems([]);
       return;
     }
+
     setLoading(true);
     try {
       const cartItems = await fetchCart();
@@ -52,18 +77,24 @@ export function CartProvider({ children, isAuthenticated }: { children: ReactNod
   }, [isAuthenticated]);
 
   useEffect(() => {
-    refreshCart();
+    void refreshCart();
   }, [refreshCart]);
 
   const addToCart = async (product: Product, quantity = 1) => {
     setItems((prev) => {
-      const existing = prev.find((i) => i.product.id === product.id);
+      const existing = prev.find((item) => item.product.id === product.id);
       const updated = existing
-        ? prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + quantity } : i)
+        ? prev.map((item) =>
+            item.product.id === product.id
+              ? { ...item, quantity: item.quantity + quantity }
+              : item,
+          )
         : [...prev, { product, quantity }];
+
       syncToLocal(updated);
       return updated;
     });
+
     const apiItems = await addToCartAPI(product.id, quantity);
     if (apiItems.length > 0) {
       setItems(apiItems);
@@ -73,10 +104,11 @@ export function CartProvider({ children, isAuthenticated }: { children: ReactNod
 
   const removeFromCart = async (productId: string) => {
     setItems((prev) => {
-      const updated = prev.filter((i) => i.product.id !== productId);
+      const updated = prev.filter((item) => item.product.id !== productId);
       syncToLocal(updated);
       return updated;
     });
+
     const apiItems = await removeFromCartAPI(productId);
     if (apiItems.length > 0) {
       setItems(apiItems);
@@ -89,11 +121,15 @@ export function CartProvider({ children, isAuthenticated }: { children: ReactNod
       await removeFromCart(productId);
       return;
     }
+
     setItems((prev) => {
-      const updated = prev.map((i) => (i.product.id === productId ? { ...i, quantity } : i));
+      const updated = prev.map((item) =>
+        item.product.id === productId ? { ...item, quantity } : item,
+      );
       syncToLocal(updated);
       return updated;
     });
+
     const apiItems = await updateCartQuantityAPI(productId, quantity);
     if (apiItems.length > 0) {
       setItems(apiItems);
@@ -107,12 +143,25 @@ export function CartProvider({ children, isAuthenticated }: { children: ReactNod
     await clearCartAPI();
   };
 
-  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
-  const totalPrice = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = items.reduce(
+    (sum, item) => sum + item.product.price * item.quantity,
+    0,
+  );
 
   return (
     <CartContext.Provider
-      value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice, loading, refreshCart }}
+      value={{
+        items,
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        clearCart,
+        totalItems,
+        totalPrice,
+        loading,
+        refreshCart,
+      }}
     >
       {children}
     </CartContext.Provider>
@@ -120,7 +169,5 @@ export function CartProvider({ children, isAuthenticated }: { children: ReactNod
 }
 
 export function useCart() {
-  const ctx = useContext(CartContext);
-  if (!ctx) throw new Error("useCart must be used within CartProvider");
-  return ctx;
+  return useContext(CartContext);
 }
