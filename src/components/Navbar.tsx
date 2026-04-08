@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ShoppingCart, Menu, X, User, LogOut, Leaf } from "lucide-react";
+import { ShoppingCart, Menu, X, User, LogOut, Leaf, Shield } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -47,6 +47,13 @@ export default function Navbar() {
 
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
+              {user?.role === "admin" && (
+                <Link to="/admin">
+                  <Button variant="outline" size="sm" className="gap-1">
+                    <Shield className="h-4 w-4" /> Admin
+                  </Button>
+                </Link>
+              )}
               <span className="text-sm text-muted-foreground">
                 Hi, {user?.name}
               </span>
@@ -92,15 +99,26 @@ export default function Navbar() {
               </Link>
             ))}
             {isAuthenticated ? (
-              <button
-                onClick={() => {
-                  logout();
-                  setMobileOpen(false);
-                }}
-                className="block w-full py-2 text-left text-sm font-medium text-foreground/70 transition-colors hover:text-primary"
-              >
-                Logout ({user?.name})
-              </button>
+              <>
+                {user?.role === "admin" && (
+                  <Link
+                    to="/admin"
+                    className="block py-2 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    ⚙ Admin Dashboard
+                  </Link>
+                )}
+                <button
+                  onClick={() => {
+                    logout();
+                    setMobileOpen(false);
+                  }}
+                  className="block w-full py-2 text-left text-sm font-medium text-foreground/70 transition-colors hover:text-primary"
+                >
+                  Logout ({user?.name})
+                </button>
+              </>
             ) : (
               <Link
                 to="/login"
