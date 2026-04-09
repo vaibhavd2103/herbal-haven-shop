@@ -6,7 +6,7 @@ export default function AdminRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, user } = useAuth();
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (user?.role !== "admin") return <Navigate to="/" replace />;
+  if (user?.role !== "ADMIN") return <Navigate to="/" replace />;
 
   return <>{children}</>;
 }
