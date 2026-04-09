@@ -24,7 +24,9 @@ export async function fetchProducts(): Promise<Product[]> {
   }
 }
 
-export async function fetchProductById(id: string): Promise<Product | undefined> {
+export async function fetchProductById(
+  id: string,
+): Promise<Product | undefined> {
   try {
     const res = await api.get(`/products/${id}`);
     return res.data.product ?? products.find((p) => p.id === id);
@@ -34,12 +36,20 @@ export async function fetchProductById(id: string): Promise<Product | undefined>
 }
 
 export async function loginUser(email: string, password: string) {
-  const res = (await api.post("/auth/login", { email, password })) as { data: LoginResponse };
+  const res = (await api.post("/auth/login", { email, password })) as {
+    data: LoginResponse;
+  };
   return res.data;
 }
 
-export async function signupUser(name: string, email: string, password: string) {
-  const res = (await api.post("/auth/signup", { name, email, password })) as { data: LoginResponse };
+export async function signupUser(
+  name: string,
+  email: string,
+  password: string,
+) {
+  const res = (await api.post("/auth/signup", { name, email, password })) as {
+    data: LoginResponse;
+  };
   return res.data;
 }
 
@@ -57,7 +67,7 @@ export async function forgotPassword(email: string) {
 export async function fetchCart(): Promise<CartItem[]> {
   try {
     const res = await api.get("/cart");
-    return res.data.items ?? [];
+    return res.data.cart.items ?? [];
   } catch {
     try {
       const stored = localStorage.getItem("rreva-cart");
@@ -68,28 +78,39 @@ export async function fetchCart(): Promise<CartItem[]> {
   }
 }
 
-export async function addToCartAPI(productId: string, quantity: number): Promise<CartItem[]> {
+export async function addToCartAPI(
+  productId: string,
+  quantity: number,
+): Promise<CartItem[]> {
   try {
-    const res = await api.post("/cart/add", { productId, quantity });
-    return res.data.items ?? [];
+    const res = await api.post("/cart/items", { productId, quantity });
+    return res.data.cart.items ?? [];
   } catch {
     return [];
   }
 }
 
-export async function removeFromCartAPI(productId: string): Promise<CartItem[]> {
+export async function removeFromCartAPI(
+  productId: string,
+  quantity: number,
+): Promise<CartItem[]> {
   try {
-    const res = await api.delete(`/cart/${productId}`);
-    return res.data.items ?? [];
+    const res = await api.delete(`/cart/itemsRemove`, {
+      data: { productId, quantity },
+    });
+    return res.data.cart.items ?? [];
   } catch {
     return [];
   }
 }
 
-export async function updateCartQuantityAPI(productId: string, quantity: number): Promise<CartItem[]> {
+export async function updateCartQuantityAPI(
+  productId: string,
+  quantity: number,
+): Promise<CartItem[]> {
   try {
-    const res = await api.put(`/cart/${productId}`, { quantity });
-    return res.data.items ?? [];
+    const res = await api.post("/cart/items", { productId, quantity });
+    return res.data.cart.items ?? [];
   } catch {
     return [];
   }
@@ -103,7 +124,10 @@ export async function clearCartAPI(): Promise<void> {
   }
 }
 
-export async function submitPaymentConfirmation(orderId: string, address: ShippingAddress) {
+export async function submitPaymentConfirmation(
+  orderId: string,
+  address: ShippingAddress,
+) {
   return new Promise((resolve) =>
     setTimeout(() => resolve({ success: true, orderId, address }), 1000),
   );
@@ -135,18 +159,44 @@ interface Review {
 
 const dummyReviews: Record<string, Review[]> = {
   "1": [
-    { id: "r1", userName: "Priya S.", rating: 5, comment: "Amazing shampoo! My hair feels so much healthier.", createdAt: "2025-03-15" },
-    { id: "r2", userName: "Ravi K.", rating: 4, comment: "Good natural fragrance, leaves hair soft.", createdAt: "2025-03-10" },
+    {
+      id: "r1",
+      userName: "Priya S.",
+      rating: 5,
+      comment: "Amazing shampoo! My hair feels so much healthier.",
+      createdAt: "2025-03-15",
+    },
+    {
+      id: "r2",
+      userName: "Ravi K.",
+      rating: 4,
+      comment: "Good natural fragrance, leaves hair soft.",
+      createdAt: "2025-03-10",
+    },
   ],
   "2": [
-    { id: "r3", userName: "Sneha M.", rating: 5, comment: "My skin glows after using this face wash!", createdAt: "2025-02-20" },
+    {
+      id: "r3",
+      userName: "Sneha M.",
+      rating: 5,
+      comment: "My skin glows after using this face wash!",
+      createdAt: "2025-02-20",
+    },
   ],
   "3": [
-    { id: "r4", userName: "Anita D.", rating: 5, comment: "Best moisturiser I've ever used. Non-greasy and smells divine.", createdAt: "2025-01-28" },
+    {
+      id: "r4",
+      userName: "Anita D.",
+      rating: 5,
+      comment: "Best moisturiser I've ever used. Non-greasy and smells divine.",
+      createdAt: "2025-01-28",
+    },
   ],
 };
 
-export async function fetchProductReviews(productId: string): Promise<Review[]> {
+export async function fetchProductReviews(
+  productId: string,
+): Promise<Review[]> {
   try {
     const res = await api.get(`/products/${productId}/reviews`);
     return res.data.reviews ?? dummyReviews[productId] ?? [];
@@ -155,12 +205,20 @@ export async function fetchProductReviews(productId: string): Promise<Review[]> 
   }
 }
 
-export async function submitReview(productId: string, rating: number, comment: string): Promise<Review> {
+export async function submitReview(
+  productId: string,
+  rating: number,
+  comment: string,
+): Promise<Review> {
   try {
-    const res = await api.post(`/products/${productId}/reviews`, { rating, comment });
+    const res = await api.post(`/products/${productId}/reviews`, {
+      rating,
+      comment,
+    });
     return res.data.review;
   } catch {
-    const userName = JSON.parse(localStorage.getItem("rreva-user") || "{}").name || "You";
+    const userName =
+      JSON.parse(localStorage.getItem("rreva-user") || "{}").name || "You";
     const newReview: Review = {
       id: `r-${Date.now()}`,
       userName,

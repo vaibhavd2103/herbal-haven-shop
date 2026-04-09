@@ -3,11 +3,45 @@ import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useCart } from "@/contexts/CartContext";
+import { CartItem, useCart } from "@/contexts/CartContext";
+import { useEffect, useState } from "react";
+import { fetchCart } from "@/lib/api";
+import { set } from "date-fns";
 
 export default function Cart() {
-  const { items, updateQuantity, removeFromCart, totalPrice } = useCart();
+  const { items, updateQuantity, removeFromCart, totalPrice, loading } =
+    useCart();
+
+  // const [items, setItems] = useState<CartItem[]>([]);
+
+  // const getCart = async () => {
+  //   const cartItems = await fetchCart();
+  //   console.log(cartItems);
+  //   setItems(cartItems);
+  // };
+
+  // useEffect(() => {
+  //   getCart();
+  // }, []);
+
+  // const totalPrice = items.reduce(
+  //   (acc, item) => acc + item.product.price * item.quantity,
+  //   0,
+  // );
+
   const shipping = totalPrice > 500 ? 0 : 49;
+
+  if (loading) {
+    return (
+      <div className="container mx-auto flex flex-col items-center px-4 py-20 text-center">
+        <ShoppingBag className="mb-4 h-16 w-16 text-muted-foreground/40 animate-pulse" />
+        <h1 className="font-serif text-2xl font-bold">Loading your cart...</h1>
+        <p className="mt-2 text-muted-foreground">
+          Fetching the freshest herbs for you!
+        </p>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -57,8 +91,9 @@ export default function Cart() {
                 <div className="flex items-center gap-2">
                   <div className="flex items-center rounded-md border">
                     <button
+                      disabled={quantity <= 1}
                       className="px-2 py-1 hover:bg-secondary"
-                      onClick={() => updateQuantity(product.id, quantity - 1)}
+                      onClick={() => removeFromCart(product.id, quantity - 1)}
                     >
                       <Minus className="h-3 w-3" />
                     </button>
@@ -73,7 +108,7 @@ export default function Cart() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => removeFromCart(product.id)}
+                    onClick={() => removeFromCart(product.id, 0)}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>

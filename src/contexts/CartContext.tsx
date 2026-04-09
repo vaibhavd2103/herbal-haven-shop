@@ -1,4 +1,11 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  type ReactNode,
+} from "react";
 import type { Product } from "@/lib/data";
 import {
   fetchCart,
@@ -16,7 +23,7 @@ export interface CartItem {
 interface CartContextType {
   items: CartItem[];
   addToCart: (product: Product, quantity?: number) => Promise<void>;
-  removeFromCart: (productId: string) => Promise<void>;
+  removeFromCart: (productId: string, quantity: number) => Promise<void>;
   updateQuantity: (productId: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
   totalItems: number;
@@ -102,14 +109,16 @@ export function CartProvider({
     }
   };
 
-  const removeFromCart = async (productId: string) => {
+  const removeFromCart = async (productId: string, quantity: number) => {
     setItems((prev) => {
-      const updated = prev.filter((item) => item.product.id !== productId);
+      const updated = prev.map((item) =>
+        item.product.id === productId ? { ...item, quantity } : item,
+      );
       syncToLocal(updated);
       return updated;
     });
 
-    const apiItems = await removeFromCartAPI(productId);
+    const apiItems = await removeFromCartAPI(productId, quantity);
     if (apiItems.length > 0) {
       setItems(apiItems);
       syncToLocal(apiItems);
@@ -117,11 +126,6 @@ export function CartProvider({
   };
 
   const updateQuantity = async (productId: string, quantity: number) => {
-    if (quantity <= 0) {
-      await removeFromCart(productId);
-      return;
-    }
-
     setItems((prev) => {
       const updated = prev.map((item) =>
         item.product.id === productId ? { ...item, quantity } : item,
