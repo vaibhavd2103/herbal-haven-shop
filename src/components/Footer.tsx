@@ -9,24 +9,55 @@ export default function Footer() {
           <div>
             <div className="mb-3 flex items-center gap-2">
               <Leaf className="h-6 w-6 text-primary" />
-              <span className="font-serif text-lg font-bold text-foreground">RREVA CARE</span>
+              <span className="font-serif text-lg font-bold text-foreground">
+                RREVA CARE
+              </span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Pure. Natural. Handcrafted. Homemade herbal products for a healthier you.
+              Pure. Natural. Handcrafted. Homemade herbal products for a
+              healthier you.
+            </p>
+            <p className="text-sm text-muted-foreground mt-4">
+              Manufactured by:{" "}
+              <span className="font-serif text-lg font-bold text-foreground">
+                SD ENTERPRISES
+              </span>
             </p>
           </div>
 
           <div>
-            <h4 className="mb-3 font-serif font-semibold text-foreground">Quick Links</h4>
+            <h4 className="mb-3 font-serif font-semibold text-foreground">
+              Quick Links
+            </h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/" className="hover:text-primary transition-colors">Home</Link></li>
-              <li><Link to="/products" className="hover:text-primary transition-colors">Products</Link></li>
-              <li><Link to="/cart" className="hover:text-primary transition-colors">Cart</Link></li>
+              <li>
+                <Link to="/" className="hover:text-primary transition-colors">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/products"
+                  className="hover:text-primary transition-colors"
+                >
+                  Products
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/cart"
+                  className="hover:text-primary transition-colors"
+                >
+                  Cart
+                </Link>
+              </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="mb-3 font-serif font-semibold text-foreground">Categories</h4>
+            <h4 className="mb-3 font-serif font-semibold text-foreground">
+              Categories
+            </h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>Hair Care</li>
               <li>Skin Care</li>
@@ -36,10 +67,12 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-3 font-serif font-semibold text-foreground">Contact</h4>
+            <h4 className="mb-3 font-serif font-semibold text-foreground">
+              Contact
+            </h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>rrevacare@gmail.com</li>
-              <li>+91 8766749107</li>
+              <li>+91 7058576255</li>
               <li>Pune, India</li>
             </ul>
           </div>

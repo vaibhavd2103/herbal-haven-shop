@@ -25,7 +25,7 @@ interface CartContextType {
   addToCart: (product: Product, quantity?: number) => Promise<void>;
   removeFromCart: (productId: string, quantity: number) => Promise<void>;
   updateQuantity: (productId: string, quantity: number) => Promise<void>;
-  clearCart: () => Promise<void>;
+  clearCart: (userID: string) => Promise<void>;
   totalItems: number;
   totalPrice: number;
   loading: boolean;
@@ -141,10 +141,10 @@ export function CartProvider({
     }
   };
 
-  const clearCart = async () => {
+  const clearCart = async (userID: string) => {
     setItems([]);
     localStorage.removeItem("rreva-cart");
-    await clearCartAPI();
+    await clearCartAPI(userID);
   };
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);

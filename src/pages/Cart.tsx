@@ -3,31 +3,11 @@ import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { CartItem, useCart } from "@/contexts/CartContext";
-import { useEffect, useState } from "react";
-import { fetchCart } from "@/lib/api";
-import { set } from "date-fns";
+import { useCart } from "@/contexts/CartContext";
 
 export default function Cart() {
   const { items, updateQuantity, removeFromCart, totalPrice, loading } =
     useCart();
-
-  // const [items, setItems] = useState<CartItem[]>([]);
-
-  // const getCart = async () => {
-  //   const cartItems = await fetchCart();
-  //   console.log(cartItems);
-  //   setItems(cartItems);
-  // };
-
-  // useEffect(() => {
-  //   getCart();
-  // }, []);
-
-  // const totalPrice = items.reduce(
-  //   (acc, item) => acc + item.product.price * item.quantity,
-  //   0,
-  // );
 
   const shipping = totalPrice > 500 ? 0 : 49;
 

@@ -15,6 +15,7 @@ import { testimonials, type Product } from "@/lib/data";
 import { useEffect, useState } from "react";
 import { fetchProducts } from "@/lib/api";
 import heroBg from "@/assets/hero-bg.jpg";
+import hero from "@/assets/hero.jpg";
 
 export default function Index() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -55,9 +56,9 @@ export default function Index() {
       <section className="relative overflow-hidden bg-primary/10 py-20 md:py-32">
         <div className="absolute inset-0">
           <img
-            src={heroBg}
+            src={hero}
             alt="Botanical herbal product arrangement"
-            className="h-full w-full object-cover opacity-15"
+            className="h-full w-full object-cover opacity-50"
             width={1920}
             height={800}
           />
@@ -74,8 +75,8 @@ export default function Index() {
             </h1>
             <p className="mt-4 text-lg text-muted-foreground md:text-xl">
               Discover RREVA CARE&apos;s range of homemade herbal products —
-              shampoos, soaps, face washes & more, made with love from nature&apos;s
-              finest ingredients.
+              shampoos, soaps, face washes & more, made with love from
+              nature&apos;s finest ingredients.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link to="/products">
@@ -171,12 +172,14 @@ export default function Index() {
                 <Card className="border-border/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
                   <CardContent className="pt-6">
                     <div className="mb-3 flex gap-0.5">
-                      {Array.from({ length: testimonial.rating }).map((_, i) => (
-                        <Star
-                          key={i}
-                          className="h-4 w-4 fill-accent text-accent"
-                        />
-                      ))}
+                      {Array.from({ length: testimonial.rating }).map(
+                        (_, i) => (
+                          <Star
+                            key={i}
+                            className="h-4 w-4 fill-accent text-accent"
+                          />
+                        ),
+                      )}
                     </div>
                     <p className="text-sm italic text-muted-foreground">
                       &quot;{testimonial.text}&quot;

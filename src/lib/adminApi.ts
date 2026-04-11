@@ -20,7 +20,12 @@ export interface Order {
   id: string;
   customerName: string;
   customerEmail: string;
-  items: { productId: string; productName: string; quantity: number; price: number }[];
+  items: {
+    productId: string;
+    productName: string;
+    quantity: number;
+    price: number;
+  }[];
   total: number;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   paymentStatus: "pending" | "approved" | "rejected";
@@ -34,8 +39,18 @@ const dummyOrders: Order[] = [
     customerName: "Priya Sharma",
     customerEmail: "priya@example.com",
     items: [
-      { productId: "1", productName: "Amla & Shikakai Herbal Shampoo", quantity: 2, price: 349 },
-      { productId: "3", productName: "Coconut & Shea Butter Moisturiser", quantity: 1, price: 399 },
+      {
+        productId: "1",
+        productName: "Amla & Shikakai Herbal Shampoo",
+        quantity: 2,
+        price: 349,
+      },
+      {
+        productId: "3",
+        productName: "Coconut & Shea Butter Moisturiser",
+        quantity: 1,
+        price: 399,
+      },
     ],
     total: 1097,
     status: "pending",
@@ -48,7 +63,12 @@ const dummyOrders: Order[] = [
     customerName: "Ravi Kumar",
     customerEmail: "ravi@example.com",
     items: [
-      { productId: "5", productName: "Bhringraj Hair Oil", quantity: 3, price: 299 },
+      {
+        productId: "5",
+        productName: "Bhringraj Hair Oil",
+        quantity: 3,
+        price: 299,
+      },
     ],
     total: 897,
     status: "confirmed",
@@ -61,8 +81,18 @@ const dummyOrders: Order[] = [
     customerName: "Sneha Patel",
     customerEmail: "sneha@example.com",
     items: [
-      { productId: "2", productName: "Turmeric & Sandalwood Face Wash", quantity: 1, price: 279 },
-      { productId: "6", productName: "Rose & Glycerin Face Mist", quantity: 2, price: 229 },
+      {
+        productId: "2",
+        productName: "Turmeric & Sandalwood Face Wash",
+        quantity: 1,
+        price: 279,
+      },
+      {
+        productId: "6",
+        productName: "Rose & Glycerin Face Mist",
+        quantity: 2,
+        price: 229,
+      },
     ],
     total: 737,
     status: "shipped",
@@ -75,7 +105,12 @@ const dummyOrders: Order[] = [
     customerName: "Anita Desai",
     customerEmail: "anita@example.com",
     items: [
-      { productId: "4", productName: "Neem & Tulsi Herbal Soap", quantity: 5, price: 149 },
+      {
+        productId: "4",
+        productName: "Neem & Tulsi Herbal Soap",
+        quantity: 5,
+        price: 149,
+      },
     ],
     total: 745,
     status: "pending",
@@ -85,7 +120,7 @@ const dummyOrders: Order[] = [
   },
 ];
 
-let ordersStore = [...dummyOrders];
+const ordersStore = [...dummyOrders];
 
 export async function fetchOrders(): Promise<Order[]> {
   try {
@@ -124,7 +159,10 @@ export async function rejectPayment(orderId: string): Promise<Order> {
   }
 }
 
-export async function updateOrderStatus(orderId: string, status: Order["status"]): Promise<Order> {
+export async function updateOrderStatus(
+  orderId: string,
+  status: Order["status"],
+): Promise<Order> {
   try {
     const res = await api.put(`/admin/orders/${orderId}/status`, { status });
     return res.data.order;
@@ -148,7 +186,9 @@ export async function fetchAdminProducts(): Promise<Product[]> {
   }
 }
 
-export async function createProduct(product: Omit<Product, "id" | "createdAt" | "updatedAt">): Promise<Product> {
+export async function createProduct(
+  product: Omit<Product, "id" | "createdAt" | "updatedAt">,
+): Promise<Product> {
   try {
     const res = await api.post("/admin/products", product);
     return res.data.product;
@@ -164,14 +204,21 @@ export async function createProduct(product: Omit<Product, "id" | "createdAt" | 
   }
 }
 
-export async function updateProduct(id: string, data: Partial<Product>): Promise<Product> {
+export async function updateProduct(
+  id: string,
+  data: Partial<Product>,
+): Promise<Product> {
   try {
     const res = await api.put(`/admin/products/${id}`, data);
     return res.data.product;
   } catch {
     const idx = productsStore.findIndex((p) => p.id === id);
     if (idx !== -1) {
-      productsStore[idx] = { ...productsStore[idx], ...data, updatedAt: new Date().toISOString() };
+      productsStore[idx] = {
+        ...productsStore[idx],
+        ...data,
+        updatedAt: new Date().toISOString(),
+      };
     }
     return productsStore[idx];
   }
@@ -185,13 +232,20 @@ export async function deleteProduct(id: string): Promise<void> {
   }
 }
 
-export async function uploadProductImages(productId: string, files: File[]): Promise<string[]> {
+export async function uploadProductImages(
+  productId: string,
+  files: File[],
+): Promise<string[]> {
   try {
     const formData = new FormData();
     files.forEach((file) => formData.append("images", file));
-    const res = await api.post(`/admin/products/${productId}/images`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const res = await api.post(
+      `/admin/products/${productId}/images`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
     return res.data.imageUrls;
   } catch {
     // Return dummy object URLs for preview

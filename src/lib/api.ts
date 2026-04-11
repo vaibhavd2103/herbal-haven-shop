@@ -116,21 +116,34 @@ export async function updateCartQuantityAPI(
   }
 }
 
-export async function clearCartAPI(): Promise<void> {
+export async function clearCartAPI(userID: string): Promise<void> {
   try {
-    await api.delete("/cart");
+    await api.delete(`/cart/${userID}`);
   } catch {
     // no-op
   }
 }
 
 export async function submitPaymentConfirmation(
-  orderId: string,
-  address: ShippingAddress,
+  items: { productId: string; quantity: number }[],
+  address: string,
+  phoneNumber: string,
+  totalPrice: number,
 ) {
-  return new Promise((resolve) =>
-    setTimeout(() => resolve({ success: true, orderId, address }), 1000),
-  );
+  try {
+    await api.post("/checkout/session", {
+      items,
+      address,
+      phoneNumber,
+      totalPrice,
+    });
+  } catch (error) {
+    console.error("Payment confirmation failed:", error);
+    throw new Error("Payment confirmation failed");
+  }
+  // return new Promise((resolve) =>
+  //   setTimeout(() => resolve({ success: true, orderId, address }), 1000),
+  // );
 }
 
 export interface ShippingAddress {
