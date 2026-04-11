@@ -1,6 +1,6 @@
 import type { Product } from "./data";
 import { products as mockProducts } from "./data";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -13,6 +13,18 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof AxiosError) {
+    if (error.response?.data?.message) return error.response.data.message;
+    if (error.response?.status === 401) return "Unauthorized. Please login again.";
+    if (error.response?.status === 403) return "You don't have permission for this action.";
+    if (error.response?.status === 404) return "Resource not found.";
+    if (error.response?.status && error.response.status >= 500) return "Server error. Please try again later.";
+    if (error.code === "ERR_NETWORK") return "Network error. Please check your connection.";
+  }
+  return "Something went wrong. Please try again.";
+}
 
 // ── Orders ──
 
@@ -27,107 +39,18 @@ export interface Order {
     price: number;
   }[];
   total: number;
-  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
-  paymentStatus: "pending" | "approved" | "rejected";
+  status: "pending_payment" | "placed" | "shipped" | "delivered" | "cancelled";
+  paymentStatus: "pending_payment" | "verified" | "rejected";
   shippingAddress: string;
   createdAt: string;
 }
-
-const dummyOrders: Order[] = [
-  {
-    id: "ORD-1001",
-    customerName: "Priya Sharma",
-    customerEmail: "priya@example.com",
-    items: [
-      {
-        productId: "1",
-        productName: "Amla & Shikakai Herbal Shampoo",
-        quantity: 2,
-        price: 349,
-      },
-      {
-        productId: "3",
-        productName: "Coconut & Shea Butter Moisturiser",
-        quantity: 1,
-        price: 399,
-      },
-    ],
-    total: 1097,
-    status: "pending",
-    paymentStatus: "pending",
-    shippingAddress: "123 MG Road, Mumbai, MH 400001",
-    createdAt: "2025-04-01T10:30:00Z",
-  },
-  {
-    id: "ORD-1002",
-    customerName: "Ravi Kumar",
-    customerEmail: "ravi@example.com",
-    items: [
-      {
-        productId: "5",
-        productName: "Bhringraj Hair Oil",
-        quantity: 3,
-        price: 299,
-      },
-    ],
-    total: 897,
-    status: "confirmed",
-    paymentStatus: "approved",
-    shippingAddress: "45 Jayanagar, Bangalore, KA 560041",
-    createdAt: "2025-04-02T14:20:00Z",
-  },
-  {
-    id: "ORD-1003",
-    customerName: "Sneha Patel",
-    customerEmail: "sneha@example.com",
-    items: [
-      {
-        productId: "2",
-        productName: "Turmeric & Sandalwood Face Wash",
-        quantity: 1,
-        price: 279,
-      },
-      {
-        productId: "6",
-        productName: "Rose & Glycerin Face Mist",
-        quantity: 2,
-        price: 229,
-      },
-    ],
-    total: 737,
-    status: "shipped",
-    paymentStatus: "approved",
-    shippingAddress: "78 Law Garden, Ahmedabad, GJ 380006",
-    createdAt: "2025-04-03T09:15:00Z",
-  },
-  {
-    id: "ORD-1004",
-    customerName: "Anita Desai",
-    customerEmail: "anita@example.com",
-    items: [
-      {
-        productId: "4",
-        productName: "Neem & Tulsi Herbal Soap",
-        quantity: 5,
-        price: 149,
-      },
-    ],
-    total: 745,
-    status: "pending",
-    paymentStatus: "pending",
-    shippingAddress: "12 Civil Lines, Delhi, DL 110001",
-    createdAt: "2025-04-05T16:45:00Z",
-  },
-];
-
-const ordersStore = [...dummyOrders];
 
 export async function fetchOrders(): Promise<Order[]> {
   try {
     const res = await api.get("/admin/orders");
     return res.data.orders;
-  } catch {
-    return [...ordersStore];
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
   }
 }
 
@@ -135,13 +58,8 @@ export async function approvePayment(orderId: string): Promise<Order> {
   try {
     const res = await api.put(`/admin/orders/${orderId}/approve-payment`);
     return res.data.order;
-  } catch {
-    const order = ordersStore.find((o) => o.id === orderId);
-    if (order) {
-      order.paymentStatus = "approved";
-      order.status = "confirmed";
-    }
-    return order!;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
   }
 }
 
@@ -149,13 +67,8 @@ export async function rejectPayment(orderId: string): Promise<Order> {
   try {
     const res = await api.put(`/admin/orders/${orderId}/reject-payment`);
     return res.data.order;
-  } catch {
-    const order = ordersStore.find((o) => o.id === orderId);
-    if (order) {
-      order.paymentStatus = "rejected";
-      order.status = "cancelled";
-    }
-    return order!;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
   }
 }
 
@@ -166,10 +79,8 @@ export async function updateOrderStatus(
   try {
     const res = await api.put(`/admin/orders/${orderId}/status`, { status });
     return res.data.order;
-  } catch {
-    const order = ordersStore.find((o) => o.id === orderId);
-    if (order) order.status = status;
-    return order!;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
   }
 }
 
@@ -248,7 +159,6 @@ export async function uploadProductImages(
     );
     return res.data.imageUrls;
   } catch {
-    // Return dummy object URLs for preview
     return files.map((file) => URL.createObjectURL(file));
   }
 }

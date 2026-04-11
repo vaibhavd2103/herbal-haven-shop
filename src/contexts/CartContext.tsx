@@ -61,6 +61,7 @@ export function CartProvider({
   };
 
   const refreshCart = useCallback(async () => {
+    // Don't call cart API if user is not logged in
     if (!isAuthenticated) {
       setItems([]);
       return;
@@ -88,6 +89,8 @@ export function CartProvider({
   }, [refreshCart]);
 
   const addToCart = async (product: Product, quantity = 1) => {
+    if (!isAuthenticated) return;
+
     setItems((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       const updated = existing
@@ -102,26 +105,36 @@ export function CartProvider({
       return updated;
     });
 
-    const apiItems = await addToCartAPI(product.id, quantity);
-    if (apiItems.length > 0) {
-      setItems(apiItems);
-      syncToLocal(apiItems);
+    try {
+      const apiItems = await addToCartAPI(product.id, quantity);
+      if (apiItems.length > 0) {
+        setItems(apiItems);
+        syncToLocal(apiItems);
+      }
+    } catch (error) {
+      console.error("Failed to add to cart:", error);
     }
   };
 
   const removeFromCart = async (productId: string, quantity: number) => {
     setItems((prev) => {
-      const updated = prev.map((item) =>
-        item.product.id === productId ? { ...item, quantity } : item,
-      );
+      const updated = quantity === 0
+        ? prev.filter((item) => item.product.id !== productId)
+        : prev.map((item) =>
+            item.product.id === productId ? { ...item, quantity } : item,
+          );
       syncToLocal(updated);
       return updated;
     });
 
-    const apiItems = await removeFromCartAPI(productId, quantity);
-    if (apiItems.length > 0) {
-      setItems(apiItems);
-      syncToLocal(apiItems);
+    try {
+      const apiItems = await removeFromCartAPI(productId, quantity);
+      if (apiItems.length > 0) {
+        setItems(apiItems);
+        syncToLocal(apiItems);
+      }
+    } catch (error) {
+      console.error("Failed to remove from cart:", error);
     }
   };
 
@@ -134,17 +147,25 @@ export function CartProvider({
       return updated;
     });
 
-    const apiItems = await updateCartQuantityAPI(productId, quantity);
-    if (apiItems.length > 0) {
-      setItems(apiItems);
-      syncToLocal(apiItems);
+    try {
+      const apiItems = await updateCartQuantityAPI(productId, quantity);
+      if (apiItems.length > 0) {
+        setItems(apiItems);
+        syncToLocal(apiItems);
+      }
+    } catch (error) {
+      console.error("Failed to update cart quantity:", error);
     }
   };
 
   const clearCart = async (userID: string) => {
     setItems([]);
     localStorage.removeItem("rreva-cart");
-    await clearCartAPI(userID);
+    try {
+      await clearCartAPI(userID);
+    } catch (error) {
+      console.error("Failed to clear cart:", error);
+    }
   };
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);

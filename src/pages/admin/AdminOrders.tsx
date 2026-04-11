@@ -3,52 +3,107 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Check, X } from "lucide-react";
+import { Check, X, Loader2 } from "lucide-react";
 import { fetchOrders, approvePayment, rejectPayment, updateOrderStatus, type Order } from "@/lib/adminApi";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const { toast } = useToast();
 
   const load = async () => {
     setLoading(true);
-    const data = await fetchOrders();
-    setOrders(data);
-    setLoading(false);
+    setError(null);
+    try {
+      const data = await fetchOrders();
+      setOrders(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load orders");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
 
   const handleApprove = async (id: string) => {
-    const updated = await approvePayment(id);
-    setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
-    toast({ title: "Payment approved", description: `Order ${id} payment approved.` });
+    setActionLoading(id);
+    try {
+      const updated = await approvePayment(id);
+      setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
+      toast({ title: "Payment verified", description: `Order ${id} marked as Placed.` });
+    } catch (err) {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Failed to approve", variant: "destructive" });
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleReject = async (id: string) => {
-    const updated = await rejectPayment(id);
-    setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
-    toast({ title: "Payment rejected", description: `Order ${id} payment rejected.`, variant: "destructive" });
+    setActionLoading(id);
+    try {
+      const updated = await rejectPayment(id);
+      setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
+      toast({ title: "Payment rejected", description: `Order ${id} payment rejected.`, variant: "destructive" });
+    } catch (err) {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Failed to reject", variant: "destructive" });
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleStatusChange = async (id: string, status: Order["status"]) => {
-    const updated = await updateOrderStatus(id, status);
-    setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
-    toast({ title: "Status updated", description: `Order ${id} → ${status}` });
+    setActionLoading(id);
+    try {
+      const updated = await updateOrderStatus(id, status);
+      setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
+      toast({ title: "Status updated", description: `Order ${id} → ${status}` });
+    } catch (err) {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Failed to update", variant: "destructive" });
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const paymentBadge = (status: Order["paymentStatus"]) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      approved: "default",
-      pending: "secondary",
-      rejected: "destructive",
+    const config: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
+      pending_payment: { variant: "secondary", label: "Pending Payment" },
+      verified: { variant: "default", label: "Verified" },
+      rejected: { variant: "destructive", label: "Rejected" },
     };
-    return <Badge variant={variants[status] ?? "outline"}>{status}</Badge>;
+    const c = config[status] ?? { variant: "outline" as const, label: status };
+    return <Badge variant={c.variant}>{c.label}</Badge>;
+  };
+
+  const statusBadge = (status: Order["status"]) => {
+    const config: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
+      pending_payment: { variant: "secondary", label: "Pending Payment" },
+      placed: { variant: "outline", label: "Placed" },
+      shipped: { variant: "default", label: "Shipped" },
+      delivered: { variant: "default", label: "Delivered" },
+      cancelled: { variant: "destructive", label: "Cancelled" },
+    };
+    const c = config[status] ?? { variant: "outline" as const, label: status };
+    return <Badge variant={c.variant}>{c.label}</Badge>;
   };
 
   if (loading) return <p className="py-8 text-center text-muted-foreground">Loading orders…</p>;
+
+  if (error) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-destructive mb-4">{error}</p>
+        <Button onClick={load} variant="outline">Retry</Button>
+      </div>
+    );
+  }
+
+  if (orders.length === 0) {
+    return <p className="py-8 text-center text-muted-foreground">No orders found.</p>;
+  }
 
   return (
     <div className="space-y-4">
@@ -65,7 +120,7 @@ export default function AdminOrders() {
             </div>
             <div className="flex items-center gap-2">
               {paymentBadge(order.paymentStatus)}
-              <Badge variant="outline">{order.status}</Badge>
+              {statusBadge(order.status)}
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -85,32 +140,45 @@ export default function AdminOrders() {
             <p className="text-xs text-muted-foreground">📍 {order.shippingAddress}</p>
 
             <div className="flex flex-wrap items-center gap-2">
-              {order.paymentStatus === "pending" && (
+              {order.paymentStatus === "pending_payment" && (
                 <>
-                  <Button size="sm" onClick={() => handleApprove(order.id)} className="gap-1">
-                    <Check className="h-3 w-3" /> Approve Payment
+                  <Button
+                    size="sm"
+                    onClick={() => handleApprove(order.id)}
+                    className="gap-1"
+                    disabled={actionLoading === order.id}
+                  >
+                    {actionLoading === order.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                    Verify & Place
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => handleReject(order.id)} className="gap-1">
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleReject(order.id)}
+                    className="gap-1"
+                    disabled={actionLoading === order.id}
+                  >
                     <X className="h-3 w-3" /> Reject
                   </Button>
                 </>
               )}
 
-              <Select
-                value={order.status}
-                onValueChange={(val) => handleStatusChange(order.id, val as Order["status"])}
-              >
-                <SelectTrigger className="h-9 w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="shipped">Shipped</SelectItem>
-                  <SelectItem value="delivered">Delivered</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
+              {order.paymentStatus === "verified" && (
+                <Select
+                  value={order.status}
+                  onValueChange={(val) => handleStatusChange(order.id, val as Order["status"])}
+                >
+                  <SelectTrigger className="h-9 w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="placed">Placed</SelectItem>
+                    <SelectItem value="shipped">Shipped</SelectItem>
+                    <SelectItem value="delivered">Delivered</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </CardContent>
         </Card>

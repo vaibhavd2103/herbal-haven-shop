@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, Menu, X, User, LogOut, Leaf, Shield } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
@@ -9,11 +9,21 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { totalItems } = useCart();
   const { isAuthenticated, user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const isAdmin = user?.role === "admin";
 
   const navLinks = [
     { to: "/", label: "Home" },
     { to: "/products", label: "Products" },
   ];
+
+  const handleCartClick = (e: React.MouseEvent) => {
+    if (!isAuthenticated) {
+      e.preventDefault();
+      navigate("/login");
+    }
+  };
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -36,24 +46,26 @@ export default function Navbar() {
             </Link>
           ))}
 
-          <Link to="/cart" className="relative">
-            <ShoppingCart className="h-5 w-5 text-foreground/70 transition-colors hover:text-primary" />
-            {totalItems > 0 && (
-              <span className="absolute -right-2 -top-2 flex h-5 w-5 animate-scale-in items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                {totalItems}
-              </span>
-            )}
-          </Link>
+          {/* Show Admin icon instead of Cart for admin users */}
+          {isAuthenticated && isAdmin ? (
+            <Link to="/admin">
+              <Button variant="outline" size="sm" className="gap-1">
+                <Shield className="h-4 w-4" /> Admin
+              </Button>
+            </Link>
+          ) : (
+            <Link to="/cart" className="relative" onClick={handleCartClick}>
+              <ShoppingCart className="h-5 w-5 text-foreground/70 transition-colors hover:text-primary" />
+              {isAuthenticated && totalItems > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-5 w-5 animate-scale-in items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                  {totalItems}
+                </span>
+              )}
+            </Link>
+          )}
 
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
-              {user?.role === "admin" && (
-                <Link to="/admin">
-                  <Button variant="outline" size="sm" className="gap-1">
-                    <Shield className="h-4 w-4" /> Admin
-                  </Button>
-                </Link>
-              )}
               <span className="text-sm text-muted-foreground">
                 Hi, {user?.name}
               </span>
@@ -71,14 +83,20 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-3 md:hidden">
-          <Link to="/cart" className="relative">
-            <ShoppingCart className="h-5 w-5" />
-            {totalItems > 0 && (
-              <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                {totalItems}
-              </span>
-            )}
-          </Link>
+          {isAuthenticated && isAdmin ? (
+            <Link to="/admin">
+              <Shield className="h-5 w-5 text-primary" />
+            </Link>
+          ) : (
+            <Link to="/cart" className="relative" onClick={handleCartClick}>
+              <ShoppingCart className="h-5 w-5" />
+              {isAuthenticated && totalItems > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                  {totalItems}
+                </span>
+              )}
+            </Link>
+          )}
           <button onClick={() => setMobileOpen((open) => !open)}>
             {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
@@ -100,7 +118,7 @@ export default function Navbar() {
             ))}
             {isAuthenticated ? (
               <>
-                {user?.role === "admin" && (
+                {isAdmin && (
                   <Link
                     to="/admin"
                     className="block py-2 text-sm font-medium text-primary transition-colors hover:text-primary/80"
