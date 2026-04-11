@@ -232,59 +232,25 @@ export function generateUPIString(amount: number, orderId: string): string {
 
 // ── Reviews API ──
 
-interface Review {
+export interface Review {
   id: string;
-  userName: string;
+  user: {
+    name: string;
+    id: string;
+  };
   rating: number;
   comment: string;
   createdAt: string;
 }
-
-const dummyReviews: Record<string, Review[]> = {
-  "1": [
-    {
-      id: "r1",
-      userName: "Priya S.",
-      rating: 5,
-      comment: "Amazing shampoo! My hair feels so much healthier.",
-      createdAt: "2025-03-15",
-    },
-    {
-      id: "r2",
-      userName: "Ravi K.",
-      rating: 4,
-      comment: "Good natural fragrance, leaves hair soft.",
-      createdAt: "2025-03-10",
-    },
-  ],
-  "2": [
-    {
-      id: "r3",
-      userName: "Sneha M.",
-      rating: 5,
-      comment: "My skin glows after using this face wash!",
-      createdAt: "2025-02-20",
-    },
-  ],
-  "3": [
-    {
-      id: "r4",
-      userName: "Anita D.",
-      rating: 5,
-      comment: "Best moisturiser I've ever used. Non-greasy and smells divine.",
-      createdAt: "2025-01-28",
-    },
-  ],
-};
 
 export async function fetchProductReviews(
   productId: string,
 ): Promise<Review[]> {
   try {
     const res = await api.get(`/products/${productId}/reviews`);
-    return res.data.reviews ?? dummyReviews[productId] ?? [];
-  } catch {
-    return dummyReviews[productId] ?? [];
+    return res.data.reviews;
+  } catch (error) {
+    console.error(error);
   }
 }
 
@@ -294,23 +260,22 @@ export async function submitReview(
   comment: string,
 ): Promise<Review> {
   try {
-    const res = await api.post(`/products/${productId}/reviews`, {
+    const res = await api.post(`/products/${productId}/review`, {
       rating,
       comment,
     });
     return res.data.review;
-  } catch {
-    const userName =
-      JSON.parse(localStorage.getItem("rreva-user") || "{}").name || "You";
-    const newReview: Review = {
-      id: `r-${Date.now()}`,
-      userName,
-      rating,
-      comment,
-      createdAt: new Date().toISOString(),
-    };
-    const existing = dummyReviews[productId] ?? [];
-    dummyReviews[productId] = [newReview, ...existing];
-    return newReview;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export async function getAllReviews(): Promise<Review[]> {
+  try {
+    const res = await api.get("/products/reviews");
+    return res.data.reviews;
+  } catch (error) {
+    console.error(error);
+    return [];
   }
 }

@@ -7,18 +7,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  fetchProductById,
-  fetchProductReviews,
-  submitReview,
-} from "@/lib/api";
+import { fetchProductById, fetchProductReviews, submitReview } from "@/lib/api";
 import { type Product } from "@/lib/data";
 import { toast } from "sonner";
 import AnimatedSection from "@/components/AnimatedSection";
 
 interface Review {
   id: string;
-  userName: string;
+  user: {
+    name: string;
+    id: string;
+  };
   rating: number;
   comment: string;
   createdAt: string;
@@ -102,7 +101,9 @@ export default function ProductDetail() {
   };
 
   const avgRating = reviews.length
-    ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
+    ? (
+        reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+      ).toFixed(1)
     : null;
 
   return (
@@ -138,7 +139,9 @@ export default function ProductDetail() {
               {product.name}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {avgRating ? `⭐ ${avgRating} · ${reviews.length} reviews` : "No reviews yet"}
+              {avgRating
+                ? `⭐ ${avgRating} · ${reviews.length} reviews`
+                : "No reviews yet"}
             </p>
             <p className="mt-4 text-foreground/80">{product.description}</p>
 
@@ -156,7 +159,9 @@ export default function ProductDetail() {
                 >
                   <Minus className="h-4 w-4" />
                 </button>
-                <span className="w-10 text-center text-sm font-medium">{qty}</span>
+                <span className="w-10 text-center text-sm font-medium">
+                  {qty}
+                </span>
                 <button
                   className="px-3 py-2 transition-colors hover:bg-secondary"
                   onClick={() => setQty(qty + 1)}
@@ -284,11 +289,14 @@ export default function ProductDetail() {
             </p>
           ) : (
             reviews.map((review) => (
-              <Card key={review.id} className="animate-fade-in border-border/50">
+              <Card
+                key={review.id}
+                className="animate-fade-in border-border/50"
+              >
                 <CardContent className="pb-4 pt-4">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="font-serif text-sm font-semibold">
-                      {review.userName}
+                      {review.user.name}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {new Date(review.createdAt).toLocaleDateString()}

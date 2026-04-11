@@ -11,18 +11,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import ProductCard from "@/components/ProductCard";
 import AnimatedSection from "@/components/AnimatedSection";
-import { testimonials, type Product } from "@/lib/data";
+import { type Product } from "@/lib/data";
 import { useEffect, useState } from "react";
-import { fetchProducts } from "@/lib/api";
+import { fetchProducts, getAllReviews, Review } from "@/lib/api";
 import heroBg from "@/assets/hero-bg.jpg";
 import hero from "@/assets/hero.jpg";
 
 export default function Index() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
 
   useEffect(() => {
     fetchProducts().then((data) => {
       setProducts(data);
+    });
+    getAllReviews().then((data) => {
+      setReviews(data);
     });
   }, []);
 
@@ -167,7 +171,7 @@ export default function Index() {
             </p>
           </AnimatedSection>
           <div className="grid gap-6 md:grid-cols-3">
-            {testimonials.map((testimonial, index) => (
+            {reviews.map((testimonial, index) => (
               <AnimatedSection key={testimonial.id} delay={index * 0.1}>
                 <Card className="border-border/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
                   <CardContent className="pt-6">
@@ -182,10 +186,10 @@ export default function Index() {
                       )}
                     </div>
                     <p className="text-sm italic text-muted-foreground">
-                      &quot;{testimonial.text}&quot;
+                      &quot;{testimonial.comment}&quot;
                     </p>
                     <p className="mt-4 font-serif text-sm font-semibold">
-                      {testimonial.name}
+                      {testimonial.user.name}
                     </p>
                   </CardContent>
                 </Card>
