@@ -15,9 +15,9 @@ export default function AdminOverview() {
   }, []);
 
   const totalRevenue = orders
-    .filter((o) => o.paymentStatus === "approved")
+    .filter((o) => o.paymentStatus === "verified")
     .reduce((sum, o) => sum + o.total, 0);
-  const pendingPayments = orders.filter((o) => o.paymentStatus === "pending").length;
+  const pendingPayments = orders.filter((o) => o.paymentStatus === "pending_payment").length;
 
   const stats = [
     { label: "Total Orders", value: orders.length, icon: ShoppingBag, color: "text-primary" },
@@ -61,8 +61,8 @@ export default function AdminOverview() {
                   <span
                     className={cn(
                       "inline-block rounded-full px-2 py-0.5 text-[10px] font-medium",
-                      order.paymentStatus === "approved" && "bg-primary/15 text-primary",
-                      order.paymentStatus === "pending" && "bg-accent/15 text-accent",
+                      order.paymentStatus === "verified" && "bg-primary/15 text-primary",
+                      order.paymentStatus === "pending_payment" && "bg-accent/15 text-accent",
                       order.paymentStatus === "rejected" && "bg-destructive/15 text-destructive"
                     )}
                   >
