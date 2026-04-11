@@ -1,5 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Menu, X, User, LogOut, Leaf, Shield } from "lucide-react";
+import {
+  ShoppingCart,
+  Menu,
+  X,
+  User,
+  LogOut,
+  Leaf,
+  Shield,
+} from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,7 +19,7 @@ export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === "ADMIN";
 
   const navLinks = [
     { to: "/", label: "Home" },
@@ -98,7 +106,11 @@ export default function Navbar() {
             </Link>
           )}
           <button onClick={() => setMobileOpen((open) => !open)}>
-            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {mobileOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
           </button>
         </div>
       </div>

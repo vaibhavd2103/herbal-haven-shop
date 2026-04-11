@@ -26,9 +26,9 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function AppInner() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   return (
-    <CartProvider isAuthenticated={isAuthenticated}>
+    <CartProvider isAuthenticated={isAuthenticated} user={user}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -41,11 +41,25 @@ function AppInner() {
                 <Route path="/products" element={<Products />} />
                 <Route path="/products/:id" element={<ProductDetail />} />
                 <Route path="/cart" element={<Cart />} />
-                <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+                <Route
+                  path="/checkout"
+                  element={
+                    <ProtectedRoute>
+                      <Checkout />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>}>
+                <Route
+                  path="/admin"
+                  element={
+                    <AdminRoute>
+                      <AdminDashboard />
+                    </AdminRoute>
+                  }
+                >
                   <Route index element={<AdminOverview />} />
                   <Route path="orders" element={<AdminOrders />} />
                   <Route path="products" element={<AdminProducts />} />

@@ -1,3 +1,4 @@
+import { User } from "@/contexts/AuthContext";
 import type { Product } from "./data";
 import { products as mockProducts } from "./data";
 import axios, { AxiosError } from "axios";
@@ -17,11 +18,15 @@ api.interceptors.request.use((config) => {
 function getErrorMessage(error: unknown): string {
   if (error instanceof AxiosError) {
     if (error.response?.data?.message) return error.response.data.message;
-    if (error.response?.status === 401) return "Unauthorized. Please login again.";
-    if (error.response?.status === 403) return "You don't have permission for this action.";
+    if (error.response?.status === 401)
+      return "Unauthorized. Please login again.";
+    if (error.response?.status === 403)
+      return "You don't have permission for this action.";
     if (error.response?.status === 404) return "Resource not found.";
-    if (error.response?.status && error.response.status >= 500) return "Server error. Please try again later.";
-    if (error.code === "ERR_NETWORK") return "Network error. Please check your connection.";
+    if (error.response?.status && error.response.status >= 500)
+      return "Server error. Please try again later.";
+    if (error.code === "ERR_NETWORK")
+      return "Network error. Please check your connection.";
   }
   return "Something went wrong. Please try again.";
 }
@@ -30,18 +35,20 @@ function getErrorMessage(error: unknown): string {
 
 export interface Order {
   id: string;
-  customerName: string;
-  customerEmail: string;
+  userId: string;
+  user: User;
   items: {
     productId: string;
-    productName: string;
+    orderId: string;
+    unitPrice: number;
+    nameSnapshot: string;
     quantity: number;
-    price: number;
+    product: Product;
   }[];
-  total: number;
-  status: "pending_payment" | "placed" | "shipped" | "delivered" | "cancelled";
-  paymentStatus: "pending_payment" | "verified" | "rejected";
-  shippingAddress: string;
+  totalPrice: number;
+  status: "PENDING_PAYMENT" | "PLACED" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+  paymentStatus: "PENDING_PAYMENT" | "VERIFIED_PAYMENT" | "REJECTED_PAYMENT";
+  address: string;
   createdAt: string;
 }
 
@@ -90,7 +97,7 @@ let productsStore = [...mockProducts];
 
 export async function fetchAdminProducts(): Promise<Product[]> {
   try {
-    const res = await api.get("/admin/products");
+    const res = await api.get("/products");
     return res.data.products;
   } catch {
     return [...productsStore];
@@ -101,17 +108,10 @@ export async function createProduct(
   product: Omit<Product, "id" | "createdAt" | "updatedAt">,
 ): Promise<Product> {
   try {
-    const res = await api.post("/admin/products", product);
+    const res = await api.post("/products", product);
     return res.data.product;
-  } catch {
-    const newProduct: Product = {
-      ...product,
-      id: String(Date.now()),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    productsStore.push(newProduct);
-    return newProduct;
+  } catch (error) {
+    console.error(error);
   }
 }
 
@@ -120,7 +120,7 @@ export async function updateProduct(
   data: Partial<Product>,
 ): Promise<Product> {
   try {
-    const res = await api.put(`/admin/products/${id}`, data);
+    const res = await api.put(`/products/${id}`, data);
     return res.data.product;
   } catch {
     const idx = productsStore.findIndex((p) => p.id === id);

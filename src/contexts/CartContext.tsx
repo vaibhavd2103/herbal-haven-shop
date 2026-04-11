@@ -14,6 +14,7 @@ import {
   updateCartQuantityAPI,
   clearCartAPI,
 } from "@/lib/api";
+import { User } from "./AuthContext";
 
 export interface CartItem {
   product: Product;
@@ -49,9 +50,11 @@ const CartContext = createContext<CartContextType>(emptyCartContext);
 export function CartProvider({
   children,
   isAuthenticated,
+  user,
 }: {
   children: ReactNode;
   isAuthenticated: boolean;
+  user: User;
 }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -62,7 +65,7 @@ export function CartProvider({
 
   const refreshCart = useCallback(async () => {
     // Don't call cart API if user is not logged in
-    if (!isAuthenticated) {
+    if (!isAuthenticated || user.role !== "CUSTOMER") {
       setItems([]);
       return;
     }
@@ -118,11 +121,12 @@ export function CartProvider({
 
   const removeFromCart = async (productId: string, quantity: number) => {
     setItems((prev) => {
-      const updated = quantity === 0
-        ? prev.filter((item) => item.product.id !== productId)
-        : prev.map((item) =>
-            item.product.id === productId ? { ...item, quantity } : item,
-          );
+      const updated =
+        quantity === 0
+          ? prev.filter((item) => item.product.id !== productId)
+          : prev.map((item) =>
+              item.product.id === productId ? { ...item, quantity } : item,
+            );
       syncToLocal(updated);
       return updated;
     });
