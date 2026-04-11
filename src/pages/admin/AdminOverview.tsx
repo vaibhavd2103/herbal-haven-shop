@@ -10,7 +10,7 @@ export default function AdminOverview() {
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    fetchOrders().then(setOrders);
+    fetchOrders().then(setOrders).catch(() => {});
     fetchAdminProducts().then(setProducts);
   }, []);
 
