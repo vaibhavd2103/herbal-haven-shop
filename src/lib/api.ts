@@ -1,4 +1,4 @@
-import { LoginResponse } from "@/contexts/AuthContext";
+import { LoginResponse, User } from "@/contexts/AuthContext";
 import { products, type Product } from "./data";
 import type { CartItem } from "@/contexts/CartContext";
 import axios, { AxiosError } from "axios";
@@ -18,11 +18,15 @@ api.interceptors.request.use((config) => {
 function getErrorMessage(error: unknown): string {
   if (error instanceof AxiosError) {
     if (error.response?.data?.message) return error.response.data.message;
-    if (error.response?.status === 401) return "Session expired. Please login again.";
-    if (error.response?.status === 403) return "You don't have permission for this action.";
+    if (error.response?.status === 401)
+      return "Session expired. Please login again.";
+    if (error.response?.status === 403)
+      return "You don't have permission for this action.";
     if (error.response?.status === 404) return "Resource not found.";
-    if (error.response?.status && error.response.status >= 500) return "Server error. Please try again later.";
-    if (error.code === "ERR_NETWORK") return "Network error. Please check your connection.";
+    if (error.response?.status && error.response.status >= 500)
+      return "Server error. Please try again later.";
+    if (error.code === "ERR_NETWORK")
+      return "Network error. Please check your connection.";
   }
   return "Something went wrong. Please try again.";
 }
@@ -180,16 +184,32 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
-  status: string;
-  items: OrderItem[];
+  userId: string;
+  user: User;
+  items: {
+    productId: string;
+    orderId: string;
+    unitPrice: number;
+    nameSnapshot: string;
+    quantity: number;
+    product: Product;
+  }[];
   totalPrice: number;
+  status:
+    | "PENDING_PAYMENT"
+    | "PLACED"
+    | "APPROVED"
+    | "SHIPPED"
+    | "DELIVERED"
+    | "CANCELLED";
+  paymentStatus: "UNPAID" | "PAID" | "REFUNDED";
   address: string;
   createdAt: string;
 }
 
 export async function fetchMyOrders(): Promise<Order[]> {
   try {
-    const res = await api.get("/orders/my");
+    const res = await api.get("/orders/");
     return res.data.orders ?? [];
   } catch {
     return [];
