@@ -14,8 +14,9 @@ import {
   fetchOrders,
   approvePayment,
   rejectPayment,
-  updateOrderStatus,
+  approveOrder,
   type Order,
+  changeOrderStatus,
 } from "@/lib/adminApi";
 import { useToast } from "@/hooks/use-toast";
 
@@ -87,12 +88,21 @@ export default function AdminOrders() {
   const handleStatusChange = async (id: string, status: Order["status"]) => {
     setActionLoading(id);
     try {
-      const updated = await updateOrderStatus(id, status);
-      setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
-      toast({
-        title: "Status updated",
-        description: `Order ${id} → ${status}`,
-      });
+      if (status === "APPROVED") {
+        const updated = await approveOrder(id);
+        setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
+        toast({
+          title: "Status updated",
+          description: `Order ${id} → ${status}`,
+        });
+      } else {
+        const updated = await changeOrderStatus(id, status);
+        setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
+        toast({
+          title: "Status updated",
+          description: `Order ${id} → ${status}`,
+        });
+      }
     } catch (err) {
       toast({
         title: "Error",
@@ -185,7 +195,9 @@ export default function AdminOrders() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
+                <span className="text-[12px]">Payment Status:</span>{" "}
                 {paymentBadge(order.paymentStatus)}
+                <span className="text-[12px]">Order Status:</span>{" "}
                 {statusBadge(order.status)}
               </div>
             </CardHeader>
@@ -213,7 +225,7 @@ export default function AdminOrders() {
               </p>
 
               <div className="flex flex-wrap items-center gap-2">
-                {order.paymentStatus === "PENDING_PAYMENT" && (
+                {order.paymentStatus === "UNPAID" && (
                   <>
                     <Button
                       size="sm"
@@ -240,7 +252,7 @@ export default function AdminOrders() {
                   </>
                 )}
 
-                {order.paymentStatus === "VERIFIED_PAYMENT" && (
+                {order.paymentStatus === "PAID" && (
                   <Select
                     value={order.status}
                     onValueChange={(val) =>
@@ -252,6 +264,7 @@ export default function AdminOrders() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="PLACED">Placed</SelectItem>
+                      <SelectItem value="APPROVED">Approved</SelectItem>
                       <SelectItem value="SHIPPED">Shipped</SelectItem>
                       <SelectItem value="DELIVERED">Delivered</SelectItem>
                       <SelectItem value="CANCELLED">Cancelled</SelectItem>

@@ -46,8 +46,14 @@ export interface Order {
     product: Product;
   }[];
   totalPrice: number;
-  status: "PENDING_PAYMENT" | "PLACED" | "SHIPPED" | "DELIVERED" | "CANCELLED";
-  paymentStatus: "PENDING_PAYMENT" | "VERIFIED_PAYMENT" | "REJECTED_PAYMENT";
+  status:
+    | "PENDING_PAYMENT"
+    | "PLACED"
+    | "APPROVED"
+    | "SHIPPED"
+    | "DELIVERED"
+    | "CANCELLED";
+  paymentStatus: "UNPAID" | "PAID" | "REFUNDED";
   address: string;
   createdAt: string;
 }
@@ -63,7 +69,7 @@ export async function fetchOrders(): Promise<Order[]> {
 
 export async function approvePayment(orderId: string): Promise<Order> {
   try {
-    const res = await api.put(`/admin/orders/${orderId}/approve-payment`);
+    const res = await api.patch(`/admin/orders/${orderId}/place`);
     return res.data.order;
   } catch (error) {
     throw new Error(getErrorMessage(error));
@@ -72,19 +78,33 @@ export async function approvePayment(orderId: string): Promise<Order> {
 
 export async function rejectPayment(orderId: string): Promise<Order> {
   try {
-    const res = await api.put(`/admin/orders/${orderId}/reject-payment`);
+    const res = await api.patch(`/admin/orders/${orderId}/rejectPayment`);
     return res.data.order;
   } catch (error) {
     throw new Error(getErrorMessage(error));
   }
 }
 
-export async function updateOrderStatus(
+export async function approveOrder(orderId: string): Promise<Order> {
+  try {
+    const res = await api.patch(`/admin/orders/${orderId}/approve`);
+    return res.data.order;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+}
+
+export async function changeOrderStatus(
   orderId: string,
   status: Order["status"],
 ): Promise<Order> {
   try {
-    const res = await api.put(`/admin/orders/${orderId}/status`, { status });
+    const res = await api.patch(
+      `/admin/orders/${orderId}/updateOrderStatus/${status}`,
+      {
+        status,
+      },
+    );
     return res.data.order;
   } catch (error) {
     throw new Error(getErrorMessage(error));
