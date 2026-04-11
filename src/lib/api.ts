@@ -1,7 +1,7 @@
 import { LoginResponse } from "@/contexts/AuthContext";
 import { products, type Product } from "./data";
 import type { CartItem } from "@/contexts/CartContext";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -14,6 +14,18 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof AxiosError) {
+    if (error.response?.data?.message) return error.response.data.message;
+    if (error.response?.status === 401) return "Session expired. Please login again.";
+    if (error.response?.status === 403) return "You don't have permission for this action.";
+    if (error.response?.status === 404) return "Resource not found.";
+    if (error.response?.status && error.response.status >= 500) return "Server error. Please try again later.";
+    if (error.code === "ERR_NETWORK") return "Network error. Please check your connection.";
+  }
+  return "Something went wrong. Please try again.";
+}
 
 export async function fetchProducts(): Promise<Product[]> {
   try {
@@ -36,10 +48,14 @@ export async function fetchProductById(
 }
 
 export async function loginUser(email: string, password: string) {
-  const res = (await api.post("/auth/login", { email, password })) as {
-    data: LoginResponse;
-  };
-  return res.data;
+  try {
+    const res = (await api.post("/auth/login", { email, password })) as {
+      data: LoginResponse;
+    };
+    return res.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
 }
 
 export async function signupUser(
@@ -47,10 +63,14 @@ export async function signupUser(
   email: string,
   password: string,
 ) {
-  const res = (await api.post("/auth/signup", { name, email, password })) as {
-    data: LoginResponse;
-  };
-  return res.data;
+  try {
+    const res = (await api.post("/auth/signup", { name, email, password })) as {
+      data: LoginResponse;
+    };
+    return res.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
 }
 
 export async function forgotPassword(email: string) {
@@ -124,26 +144,29 @@ export async function clearCartAPI(userID: string): Promise<void> {
   }
 }
 
+export interface PlaceOrderResponse {
+  orderId: string;
+  status: "pending_payment";
+  paymentStatus: "pending_payment";
+}
+
 export async function submitPaymentConfirmation(
   items: { productId: string; quantity: number }[],
   address: string,
   phoneNumber: string,
   totalPrice: number,
-) {
+): Promise<PlaceOrderResponse> {
   try {
-    await api.post("/checkout/session", {
+    const res = await api.post("/checkout/session", {
       items,
       address,
       phoneNumber,
       totalPrice,
     });
+    return res.data;
   } catch (error) {
-    console.error("Payment confirmation failed:", error);
-    throw new Error("Payment confirmation failed");
+    throw new Error(getErrorMessage(error));
   }
-  // return new Promise((resolve) =>
-  //   setTimeout(() => resolve({ success: true, orderId, address }), 1000),
-  // );
 }
 
 export interface ShippingAddress {

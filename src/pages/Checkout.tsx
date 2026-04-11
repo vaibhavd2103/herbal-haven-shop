@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { CheckCircle2, Loader2, MapPin } from "lucide-react";
+import { CheckCircle2, Loader2, MapPin, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/contexts/CartContext";
 import {
   generateUPIString,
@@ -21,7 +22,8 @@ export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
   const { user } = useAuth();
   const [confirming, setConfirming] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
+  const [orderPlaced, setOrderPlaced] = useState(false);
+  const [placedOrderId, setPlacedOrderId] = useState("");
   const [step, setStep] = useState<"address" | "payment">("address");
   const [address, setAddress] = useState<ShippingAddress>({
     fullName: "",
@@ -76,11 +78,13 @@ export default function Checkout() {
         address.phone,
         grandTotal,
       );
-      setConfirmed(true);
-      clearCart(user.id);
-      toast.success("Payment confirmed! Thank you for your order.");
-    } catch {
-      toast.error("Something went wrong. Please try again.");
+      setPlacedOrderId(orderId);
+      setOrderPlaced(true);
+      if (user) {
+        clearCart(user.id);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Something went wrong. Please try again.");
     } finally {
       setConfirming(false);
     }
@@ -90,15 +94,29 @@ export default function Checkout() {
     window.location.href = upiString;
   };
 
-  if (confirmed) {
+  // Order placed — show pending payment status
+  if (orderPlaced) {
     return (
       <div className="container mx-auto flex flex-col items-center px-4 py-20 text-center">
-        <CheckCircle2 className="mb-4 h-20 w-20 text-primary" />
-        <h1 className="font-serif text-3xl font-bold">Order Confirmed!</h1>
-        <p className="mt-2 text-muted-foreground">Order ID: {orderId}</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          We'll notify you once your herbal goodies are on the way.
+        <Clock className="mb-4 h-20 w-20 text-primary" />
+        <h1 className="font-serif text-3xl font-bold">Order Placed!</h1>
+        <p className="mt-2 text-muted-foreground">Order ID: {placedOrderId}</p>
+        <Badge variant="secondary" className="mt-3 text-sm px-4 py-1">
+          ⏳ Payment Pending Verification
+        </Badge>
+        <p className="mt-4 max-w-md text-sm text-muted-foreground">
+          Your order has been placed successfully. Our team will verify your payment
+          and update the status shortly. You'll be notified once your payment is confirmed.
         </p>
+        <div className="mt-6 rounded-lg border border-border/50 bg-secondary/30 p-4 text-left text-sm max-w-sm w-full">
+          <p className="font-medium text-foreground mb-2">Order Status Flow:</p>
+          <div className="space-y-1 text-muted-foreground text-xs">
+            <p className="text-primary font-medium">● Pending Payment ← You are here</p>
+            <p>○ Placed (payment verified by admin)</p>
+            <p>○ Shipped</p>
+            <p>○ Delivered</p>
+          </div>
+        </div>
         <Button className="mt-8" onClick={() => navigate("/products")}>
           Continue Shopping
         </Button>
@@ -330,8 +348,12 @@ export default function Checkout() {
                 ) : (
                   <CheckCircle2 className="h-4 w-4" />
                 )}
-                I've Completed Payment
+                I Have Paid
               </Button>
+              <p className="mt-2 text-xs text-muted-foreground">
+                After clicking, your order will be placed with "Pending Payment" status.
+                Admin will verify and update your order.
+              </p>
             </CardContent>
           </Card>
         )}
