@@ -7,6 +7,7 @@ import {
   LogOut,
   Leaf,
   Shield,
+  Package,
 } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
@@ -62,14 +63,21 @@ export default function Navbar() {
               </Button>
             </Link>
           ) : (
-            <Link to="/cart" className="relative" onClick={handleCartClick}>
-              <ShoppingCart className="h-5 w-5 text-foreground/70 transition-colors hover:text-primary" />
-              {isAuthenticated && totalItems > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-5 w-5 animate-scale-in items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                  {totalItems}
-                </span>
+            <div className="flex items-center gap-4">
+              {isAuthenticated && (
+                <Link to="/my-orders" className="text-foreground/70 transition-colors hover:text-primary" title="My Orders">
+                  <Package className="h-5 w-5" />
+                </Link>
               )}
-            </Link>
+              <Link to="/cart" className="relative" onClick={handleCartClick}>
+                <ShoppingCart className="h-5 w-5 text-foreground/70 transition-colors hover:text-primary" />
+                {isAuthenticated && totalItems > 0 && (
+                  <span className="absolute -right-2 -top-2 flex h-5 w-5 animate-scale-in items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                    {totalItems}
+                  </span>
+                )}
+              </Link>
+            </div>
           )}
 
           {isAuthenticated ? (
@@ -96,14 +104,21 @@ export default function Navbar() {
               <Shield className="h-5 w-5 text-primary" />
             </Link>
           ) : (
-            <Link to="/cart" className="relative" onClick={handleCartClick}>
-              <ShoppingCart className="h-5 w-5" />
-              {isAuthenticated && totalItems > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                  {totalItems}
-                </span>
+            <div className="flex items-center gap-3">
+              {isAuthenticated && (
+                <Link to="/my-orders">
+                  <Package className="h-5 w-5 text-foreground/70" />
+                </Link>
               )}
-            </Link>
+              <Link to="/cart" className="relative" onClick={handleCartClick}>
+                <ShoppingCart className="h-5 w-5" />
+                {isAuthenticated && totalItems > 0 && (
+                  <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                    {totalItems}
+                  </span>
+                )}
+              </Link>
+            </div>
           )}
           <button onClick={() => setMobileOpen((open) => !open)}>
             {mobileOpen ? (
