@@ -169,6 +169,33 @@ export async function submitPaymentConfirmation(
   }
 }
 
+// ── Orders API ──
+
+export interface OrderItem {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+export interface Order {
+  id: string;
+  status: string;
+  items: OrderItem[];
+  totalPrice: number;
+  address: string;
+  createdAt: string;
+}
+
+export async function fetchMyOrders(): Promise<Order[]> {
+  try {
+    const res = await api.get("/orders/my");
+    return res.data.orders ?? [];
+  } catch {
+    return [];
+  }
+}
+
 export interface ShippingAddress {
   fullName: string;
   phone: string;
