@@ -95,6 +95,80 @@ export async function updateOrderStatus(
 
 let productsStore = [...mockProducts];
 
+// ── Shared types ──
+
+type ProductFields = Omit<Product, "id" | "createdAt" | "updatedAt">;
+
+export type CreateProductPayload = ProductFields & {
+  /** New image files to upload to Cloudinary */
+  images?: File[];
+};
+
+export type UpdateProductPayload = Partial<ProductFields> & {
+  /** New image files to upload to Cloudinary */
+  images?: File[];
+  /**
+   * Existing Cloudinary URLs the client wants to keep.
+   *
+   * - Omit this field entirely → server leaves imageUrls untouched.
+   * - Pass an empty array     → server deletes all existing images.
+   * - Pass a subset           → server deletes removed URLs, keeps the rest,
+   *                             then appends any newly uploaded ones.
+   */
+  existingImageUrls?: string[];
+};
+
+/**
+ * Builds a multipart/form-data payload that matches the backend's expected
+ * shape (Zod CreateSchema / UpdateSchema):
+ *
+ *  • Scalar fields       → single append
+ *  • Array fields        → repeated keys  (ingredients=x&ingredients=y …)
+ *  • existingImageUrls   → repeated keys  (tells server which Cloudinary URLs
+ *                          to keep; omit the field entirely to leave images alone)
+ *  • images              → File objects appended under "images"
+ */
+function buildProductFormData(product: UpdateProductPayload): FormData {
+  const formData = new FormData();
+
+  // Scalar fields
+  const scalarFields = [
+    "name",
+    "description",
+    "price",
+    "currency",
+    "isActive",
+  ] as const;
+  for (const field of scalarFields) {
+    if (product[field] !== undefined) {
+      formData.append(field, String(product[field]));
+    }
+  }
+
+  // Array fields — appended one-by-one so multer/Zod receives them as arrays
+  const arrayFields = ["ingredients", "benefits", "howToUse"] as const;
+  for (const field of arrayFields) {
+    const values = product[field];
+    if (Array.isArray(values)) {
+      values.forEach((v) => formData.append(field, v));
+    }
+  }
+
+  // Existing Cloudinary URLs to keep.
+  // Only append when explicitly provided — omitting signals the server to
+  // leave the stored imageUrls completely untouched.
+  if (product.existingImageUrls !== undefined) {
+    product.existingImageUrls.forEach((url) =>
+      formData.append("existingImageUrls", url),
+    );
+  }
+
+  // New image files
+  product.images?.forEach((file) => formData.append("images", file));
+
+  return formData;
+}
+
 export async function fetchAdminProducts(): Promise<Product[]> {
   try {
     const res = await api.get("/products");
@@ -105,33 +179,30 @@ export async function fetchAdminProducts(): Promise<Product[]> {
 }
 
 export async function createProduct(
-  product: Omit<Product, "id" | "createdAt" | "updatedAt">,
+  product: CreateProductPayload,
 ): Promise<Product> {
   try {
-    const res = await api.post("/products", product);
+    const formData = buildProductFormData(product);
+    // Do NOT set Content-Type manually — axios must auto-generate the boundary
+    // (e.g. multipart/form-data; boundary=---...). Without it multer cannot parse files.
+    const res = await api.post("/products", formData);
     return res.data.product;
   } catch (error) {
-    console.error(error);
+    throw new Error(getErrorMessage(error));
   }
 }
 
 export async function updateProduct(
   id: string,
-  data: Partial<Product>,
+  data: UpdateProductPayload,
 ): Promise<Product> {
   try {
-    const res = await api.put(`/products/${id}`, data);
+    const formData = buildProductFormData(data);
+    // Same reason — let axios set the boundary automatically
+    const res = await api.put(`/products/${id}`, formData);
     return res.data.product;
-  } catch {
-    const idx = productsStore.findIndex((p) => p.id === id);
-    if (idx !== -1) {
-      productsStore[idx] = {
-        ...productsStore[idx],
-        ...data,
-        updatedAt: new Date().toISOString(),
-      };
-    }
-    return productsStore[idx];
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
   }
 }
 
@@ -150,13 +221,7 @@ export async function uploadProductImages(
   try {
     const formData = new FormData();
     files.forEach((file) => formData.append("images", file));
-    const res = await api.post(
-      `/admin/products/${productId}/images`,
-      formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-      },
-    );
+    const res = await api.post(`/admin/products/${productId}/images`, formData);
     return res.data.imageUrls;
   } catch {
     return files.map((file) => URL.createObjectURL(file));

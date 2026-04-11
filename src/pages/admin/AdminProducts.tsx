@@ -5,14 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Upload, X } from "lucide-react";
 import {
   fetchAdminProducts,
   createProduct,
   updateProduct,
   deleteProduct,
-  uploadProductImages,
 } from "@/lib/adminApi";
 import type { Product } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
@@ -43,8 +48,13 @@ export default function AdminProducts() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ProductFormData>(emptyForm);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  // Existing Cloudinary URLs still kept by the user (edit mode only)
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
+  // Newly picked File objects + their local object URLs for preview
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [newFilePreviews, setNewFilePreviews] = useState<string[]>([]);
+
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -56,13 +66,20 @@ export default function AdminProducts() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
+
+  const resetImageState = () => {
+    setExistingImageUrls([]);
+    setNewFiles([]);
+    setNewFilePreviews([]);
+  };
 
   const openCreate = () => {
     setEditingId(null);
     setForm(emptyForm);
-    setSelectedFiles([]);
-    setPreviewUrls([]);
+    resetImageState();
     setDialogOpen(true);
   };
 
@@ -77,64 +94,91 @@ export default function AdminProducts() {
       howToUse: product.howToUse.join(". "),
       isActive: product.isActive,
     });
-    setSelectedFiles([]);
-    setPreviewUrls(product.imageUrls);
+    // Seed existing URLs; no new files yet
+    setExistingImageUrls(product.imageUrls);
+    setNewFiles([]);
+    setNewFilePreviews([]);
     setDialogOpen(true);
   };
 
   const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setSelectedFiles((prev) => [...prev, ...files]);
-    const urls = files.map((f) => URL.createObjectURL(f));
-    setPreviewUrls((prev) => [...prev, ...urls]);
+    setNewFiles((prev) => [...prev, ...files]);
+    setNewFilePreviews((prev) => [
+      ...prev,
+      ...files.map((f) => URL.createObjectURL(f)),
+    ]);
+    // Reset input so the same file can be re-picked if needed
+    e.target.value = "";
   };
 
-  const removePreview = (idx: number) => {
-    setPreviewUrls((prev) => prev.filter((_, i) => i !== idx));
-    if (idx >= (previewUrls.length - selectedFiles.length)) {
-      const fileIdx = idx - (previewUrls.length - selectedFiles.length);
-      setSelectedFiles((prev) => prev.filter((_, i) => i !== fileIdx));
-    }
+  const removeExistingImage = (idx: number) => {
+    setExistingImageUrls((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const removeNewFile = (idx: number) => {
+    URL.revokeObjectURL(newFilePreviews[idx]);
+    setNewFiles((prev) => prev.filter((_, i) => i !== idx));
+    setNewFilePreviews((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleSubmit = async () => {
     if (!form.name || !form.price) {
-      toast({ title: "Missing fields", description: "Name and price are required.", variant: "destructive" });
+      toast({
+        title: "Missing fields",
+        description: "Name and price are required.",
+        variant: "destructive",
+      });
       return;
     }
 
     setSubmitting(true);
-    const productData = {
+
+    const baseFields = {
       name: form.name,
       description: form.description,
       price: parseFloat(form.price),
       currency: "INR",
-      ingredients: form.ingredients.split(",").map((s) => s.trim()).filter(Boolean),
-      benefits: form.benefits.split(",").map((s) => s.trim()).filter(Boolean),
-      howToUse: form.howToUse.split(".").map((s) => s.trim()).filter(Boolean),
+      ingredients: form.ingredients
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      benefits: form.benefits
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      howToUse: form.howToUse
+        .split(".")
+        .map((s) => s.trim())
+        .filter(Boolean),
       isActive: form.isActive,
-      imageUrls: previewUrls,
     };
 
     try {
       if (editingId) {
-        const updated = await updateProduct(editingId, productData);
-        if (selectedFiles.length > 0) {
-          const urls = await uploadProductImages(editingId, selectedFiles);
-          await updateProduct(editingId, { imageUrls: [...(updated.imageUrls || []), ...urls] });
-        }
+        await updateProduct(editingId, {
+          ...baseFields,
+          // Tell the server which existing Cloudinary URLs to keep.
+          // Removed ones will be deleted from Cloudinary server-side.
+          existingImageUrls,
+          // New files to upload and append.
+          images: newFiles,
+        });
         toast({ title: "Product updated" });
       } else {
-        const created = await createProduct(productData);
-        if (selectedFiles.length > 0) {
-          await uploadProductImages(created.id, selectedFiles);
-        }
+        await createProduct({
+          ...baseFields,
+          imageUrls: [],
+          images: newFiles,
+        });
         toast({ title: "Product created" });
       }
       setDialogOpen(false);
       await load();
-    } catch {
-      toast({ title: "Error", description: "Something went wrong.", variant: "destructive" });
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Something went wrong.";
+      toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -146,12 +190,19 @@ export default function AdminProducts() {
     toast({ title: "Product deleted" });
   };
 
-  if (loading) return <p className="py-8 text-center text-muted-foreground">Loading products…</p>;
+  if (loading)
+    return (
+      <p className="py-8 text-center text-muted-foreground">
+        Loading products…
+      </p>
+    );
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-serif text-lg font-semibold text-foreground">Products</h2>
+        <h2 className="font-serif text-lg font-semibold text-foreground">
+          Products
+        </h2>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={openCreate} size="sm" className="gap-1">
@@ -160,55 +211,120 @@ export default function AdminProducts() {
           </DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle className="font-serif">{editingId ? "Edit Product" : "New Product"}</DialogTitle>
+              <DialogTitle className="font-serif">
+                {editingId ? "Edit Product" : "New Product"}
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-2">
               <div>
                 <Label>Name *</Label>
-                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
               </div>
               <div>
                 <Label>Description</Label>
-                <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
+                <Textarea
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
+                  rows={3}
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Price (₹) *</Label>
-                  <Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+                  <Input
+                    type="number"
+                    value={form.price}
+                    onChange={(e) =>
+                      setForm({ ...form, price: e.target.value })
+                    }
+                  />
                 </div>
                 <div className="flex items-end gap-2">
                   <Label>Active</Label>
-                  <Switch checked={form.isActive} onCheckedChange={(v) => setForm({ ...form, isActive: v })} />
+                  <Switch
+                    checked={form.isActive}
+                    onCheckedChange={(v) => setForm({ ...form, isActive: v })}
+                  />
                 </div>
               </div>
               <div>
                 <Label>Ingredients (comma-separated)</Label>
-                <Input value={form.ingredients} onChange={(e) => setForm({ ...form, ingredients: e.target.value })} />
+                <Input
+                  value={form.ingredients}
+                  onChange={(e) =>
+                    setForm({ ...form, ingredients: e.target.value })
+                  }
+                />
               </div>
               <div>
                 <Label>Benefits (comma-separated)</Label>
-                <Input value={form.benefits} onChange={(e) => setForm({ ...form, benefits: e.target.value })} />
+                <Input
+                  value={form.benefits}
+                  onChange={(e) =>
+                    setForm({ ...form, benefits: e.target.value })
+                  }
+                />
               </div>
               <div>
                 <Label>How to Use (period-separated)</Label>
-                <Textarea value={form.howToUse} onChange={(e) => setForm({ ...form, howToUse: e.target.value })} rows={2} />
+                <Textarea
+                  value={form.howToUse}
+                  onChange={(e) =>
+                    setForm({ ...form, howToUse: e.target.value })
+                  }
+                  rows={2}
+                />
               </div>
 
               {/* Image Upload */}
               <div>
                 <Label>Product Images</Label>
                 <div className="mt-2 flex flex-wrap gap-3">
-                  {previewUrls.map((url, i) => (
-                    <div key={i} className="relative h-20 w-20 overflow-hidden rounded-lg border border-border">
-                      <img src={url} alt="" className="h-full w-full object-cover" />
+                  {/* Existing Cloudinary images (edit mode) */}
+                  {existingImageUrls.map((url, i) => (
+                    <div
+                      key={`existing-${i}`}
+                      className="relative h-20 w-20 overflow-hidden rounded-lg border border-border"
+                    >
+                      <img
+                        src={url}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
                       <button
-                        onClick={() => removePreview(i)}
+                        onClick={() => removeExistingImage(i)}
                         className="absolute right-0.5 top-0.5 rounded-full bg-destructive p-0.5 text-destructive-foreground"
                       >
                         <X className="h-3 w-3" />
                       </button>
                     </div>
                   ))}
+
+                  {/* Newly selected file previews */}
+                  {newFilePreviews.map((url, i) => (
+                    <div
+                      key={`new-${i}`}
+                      className="relative h-20 w-20 overflow-hidden rounded-lg border border-border"
+                    >
+                      <img
+                        src={url}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                      <button
+                        onClick={() => removeNewFile(i)}
+                        className="absolute right-0.5 top-0.5 rounded-full bg-destructive p-0.5 text-destructive-foreground"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
@@ -226,8 +342,16 @@ export default function AdminProducts() {
                 </div>
               </div>
 
-              <Button onClick={handleSubmit} disabled={submitting} className="w-full">
-                {submitting ? "Saving…" : editingId ? "Update Product" : "Create Product"}
+              <Button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="w-full"
+              >
+                {submitting
+                  ? "Saving…"
+                  : editingId
+                    ? "Update Product"
+                    : "Create Product"}
               </Button>
             </div>
           </DialogContent>
@@ -240,24 +364,43 @@ export default function AdminProducts() {
             <CardHeader className="flex flex-row items-start gap-3 pb-2">
               <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-secondary">
                 {product.imageUrls[0] ? (
-                  <img src={product.imageUrls[0]} alt={product.name} className="h-full w-full object-cover" />
+                  <img
+                    src={product.imageUrls[0]}
+                    alt={product.name}
+                    className="h-full w-full object-cover"
+                  />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-muted-foreground text-xs">No img</div>
+                  <div className="flex h-full items-center justify-center text-muted-foreground text-xs">
+                    No img
+                  </div>
                 )}
               </div>
               <div className="flex-1">
                 <CardTitle className="text-sm">{product.name}</CardTitle>
-                <p className="text-sm font-semibold text-primary">₹{product.price}</p>
+                <p className="text-sm font-semibold text-primary">
+                  ₹{product.price}
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  {product.isActive ? "Active" : "Inactive"} • {product.imageUrls.length} image(s)
+                  {product.isActive ? "Active" : "Inactive"} •{" "}
+                  {product.imageUrls.length} image(s)
                 </p>
               </div>
             </CardHeader>
             <CardContent className="flex gap-2 pt-0">
-              <Button size="sm" variant="outline" onClick={() => openEdit(product)} className="gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => openEdit(product)}
+                className="gap-1"
+              >
                 <Pencil className="h-3 w-3" /> Edit
               </Button>
-              <Button size="sm" variant="destructive" onClick={() => handleDelete(product.id)} className="gap-1">
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => handleDelete(product.id)}
+                className="gap-1"
+              >
                 <Trash2 className="h-3 w-3" /> Delete
               </Button>
             </CardContent>
