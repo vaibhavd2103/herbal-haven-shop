@@ -227,7 +227,7 @@ export interface ShippingAddress {
 }
 
 export function generateUPIString(amount: number, orderId: string): string {
-  return `upi://pay?pa=rrevacare@upi&pn=RREVA CARE&am=${amount}&cu=INR&tn=Order ${orderId}`;
+  return `upi://pay?pa=sheeladangeiaf13-1@okicici&pn=RREVA CARE&am=${amount}&cu=INR&tn=Order ${orderId}`;
 }
 
 // ── Reviews API ──

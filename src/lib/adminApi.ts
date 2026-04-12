@@ -228,7 +228,7 @@ export async function updateProduct(
 
 export async function deleteProduct(id: string): Promise<void> {
   try {
-    await api.delete(`/admin/products/${id}`);
+    await api.delete(`/products/${id}`);
   } catch {
     productsStore = productsStore.filter((p) => p.id !== id);
   }

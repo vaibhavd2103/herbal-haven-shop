@@ -26,6 +26,11 @@ const statusConfig: Record<
     icon: <Clock className="h-4 w-4" />,
     variant: "outline",
   },
+  APPROVED: {
+    label: "Approved",
+    icon: <CheckCircle2 className="h-4 w-4" />,
+    variant: "secondary",
+  },
   PLACED: {
     label: "Placed",
     icon: <CheckCircle2 className="h-4 w-4" />,
