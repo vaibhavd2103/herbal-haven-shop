@@ -45,15 +45,18 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden items-center gap-6 md:flex">
-          {navLinks.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className="text-sm font-medium text-foreground/70 transition-colors hover:text-primary"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map(
+            (link) =>
+              !isAdmin && (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className="text-sm font-medium text-foreground/70 transition-colors hover:text-primary"
+                >
+                  {link.label}
+                </Link>
+              ),
+          )}
 
           {/* Show Admin icon instead of Cart for admin users */}
           {isAuthenticated && isAdmin ? (
@@ -65,7 +68,11 @@ export default function Navbar() {
           ) : (
             <div className="flex items-center gap-4">
               {isAuthenticated && (
-                <Link to="/my-orders" className="text-foreground/70 transition-colors hover:text-primary" title="My Orders">
+                <Link
+                  to="/my-orders"
+                  className="text-foreground/70 transition-colors hover:text-primary"
+                  title="My Orders"
+                >
                   <Package className="h-5 w-5" />
                 </Link>
               )}

@@ -18,6 +18,7 @@ export interface Product {
   ingredients: string[];
   benefits: string[];
   howToUse: string[];
+  mrp: number;
 }
 
 export const products: Product[] = [
@@ -25,6 +26,7 @@ export const products: Product[] = [
     id: "1",
     name: "Amla & Shikakai Herbal Shampoo",
     price: 349,
+    mrp: 449,
     currency: "INR",
     description:
       "A gentle, chemical-free shampoo enriched with Amla and Shikakai extracts. Strengthens hair roots and adds natural shine.",
@@ -56,6 +58,7 @@ export const products: Product[] = [
     id: "2",
     name: "Turmeric & Sandalwood Face Wash",
     price: 279,
+    mrp: 849,
     currency: "INR",
     description:
       "Deeply cleanses and brightens skin with the power of turmeric and sandalwood. Suitable for all skin types.",
@@ -87,6 +90,7 @@ export const products: Product[] = [
     id: "3",
     name: "Coconut & Shea Butter Moisturiser",
     price: 399,
+    mrp: 499,
     currency: "INR",
     description:
       "Deep hydration with organic coconut oil and raw shea butter. Locks in moisture for 24 hours without greasiness.",
@@ -118,6 +122,7 @@ export const products: Product[] = [
     id: "4",
     name: "Neem & Tulsi Herbal Soap",
     price: 149,
+    mrp: 199,
     currency: "INR",
     description:
       "Antibacterial handmade soap with neem and tulsi. Protects skin from infections while keeping it soft and supple.",
@@ -149,6 +154,7 @@ export const products: Product[] = [
     id: "5",
     name: "Bhringraj Hair Oil",
     price: 299,
+    mrp: 399,
     currency: "INR",
     description:
       "Traditional Bhringraj oil infused with coconut and sesame oil base. Promotes hair growth and prevents premature greying.",
@@ -166,37 +172,6 @@ export const products: Product[] = [
       "Leave for 1 hour or overnight, then wash",
     ],
     imageUrls: [hairOil],
-    isActive: true,
-    createdAt: "2025-01-01",
-    updatedAt: "2025-01-01",
-  },
-  {
-    id: "6",
-    name: "Rose & Glycerin Face Mist",
-    price: 229,
-    currency: "INR",
-    description:
-      "Refreshing rose water mist with glycerin for instant hydration. Perfect as a toner or mid-day refresher.",
-    ingredients: [
-      "Rose Water",
-      "Glycerin",
-      "Witch Hazel",
-      "Vitamin C",
-      "Cucumber Extract",
-    ],
-    benefits: [
-      "Instant hydration",
-      "Natural toner",
-      "Refreshes skin",
-      "Soothes irritation",
-    ],
-    howToUse: [
-      "Hold 6 inches from face",
-      "Close eyes and spray",
-      "Let it absorb naturally",
-      "Use anytime for a refresh",
-    ],
-    imageUrls: [faceMist],
     isActive: true,
     createdAt: "2025-01-01",
     updatedAt: "2025-01-01",

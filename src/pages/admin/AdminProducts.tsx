@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 interface ProductFormData {
   name: string;
   description: string;
+  mrp: string;
   price: string;
   ingredients: string;
   benefits: string;
@@ -40,6 +41,7 @@ const emptyForm: ProductFormData = {
   benefits: "",
   howToUse: "",
   isActive: true,
+  mrp: "",
 };
 
 export default function AdminProducts() {
@@ -93,6 +95,7 @@ export default function AdminProducts() {
       benefits: product.benefits.join(", "),
       howToUse: product.howToUse.join(". "),
       isActive: product.isActive,
+      mrp: String(product.mrp), // No MRP field in API, so just add ₹100 for demo
     });
     // Seed existing URLs; no new files yet
     setExistingImageUrls(product.imageUrls);
@@ -138,6 +141,7 @@ export default function AdminProducts() {
       name: form.name,
       description: form.description,
       price: parseFloat(form.price),
+      mrp: parseFloat(form.mrp),
       currency: "INR",
       ingredients: form.ingredients
         .split(",")
@@ -233,7 +237,7 @@ export default function AdminProducts() {
                   rows={3}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label>Price (₹) *</Label>
                   <Input
@@ -242,6 +246,14 @@ export default function AdminProducts() {
                     onChange={(e) =>
                       setForm({ ...form, price: e.target.value })
                     }
+                  />
+                </div>
+                <div>
+                  <Label>MRP (₹) *</Label>
+                  <Input
+                    type="number"
+                    value={form.mrp}
+                    onChange={(e) => setForm({ ...form, mrp: e.target.value })}
                   />
                 </div>
                 <div className="flex items-end gap-2">

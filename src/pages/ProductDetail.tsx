@@ -221,8 +221,14 @@ export default function ProductDetail() {
             <p className="mt-4 text-foreground/80">{product.description}</p>
 
             <div className="mt-8 flex items-center gap-6">
-              <span className="font-serif text-3xl font-bold text-primary">
-                ₹{product.price}
+              <span className="font-mono text-3xl font-bold text-primary">
+                ₹{product.price}{" "}
+                <span className="text-xl text-muted-foreground ">
+                  MRP:₹
+                  <span className="font-normal line-through">
+                    {product.mrp}
+                  </span>
+                </span>
               </span>
             </div>
 

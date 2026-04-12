@@ -158,6 +158,7 @@ function buildProductFormData(product: UpdateProductPayload): FormData {
     "price",
     "currency",
     "isActive",
+    "mrp",
   ] as const;
   for (const field of scalarFields) {
     if (product[field] !== undefined) {

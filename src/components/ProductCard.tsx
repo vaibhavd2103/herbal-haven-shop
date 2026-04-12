@@ -46,8 +46,12 @@ export default function ProductCard({ product }: { product: Product }) {
             </span>
           </div>
           <div className="mt-3 flex items-center justify-between">
-            <span className="font-serif text-lg font-bold text-primary">
-              ₹{product.price}
+            <span className="font-mono text-xl font-bold text-primary">
+              ₹{product.price}{" "}
+              <span className="text-sm text-muted-foreground ">
+                MRP:₹
+                <span className="font-normal line-through">{product.mrp}</span>
+              </span>
             </span>
             <Button size="sm" onClick={handleAdd} className="h-8 gap-1 text-xs">
               <ShoppingCart className="h-3 w-3" /> Add
