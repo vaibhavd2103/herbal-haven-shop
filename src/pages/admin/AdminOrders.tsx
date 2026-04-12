@@ -25,6 +25,7 @@ export default function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [selectedOrderType, setSelectedOrderType] = useState(null);
   const { toast } = useToast();
 
   const load = async () => {
@@ -176,12 +177,36 @@ export default function AdminOrders() {
 
   return (
     <div className="space-y-4">
-      <h2 className="font-serif text-lg font-semibold text-foreground">
-        Orders & Payments
-      </h2>
+      <div className="flex items-center w-full justify-between">
+        <h2 className="font-serif text-lg font-semibold text-foreground">
+          Orders & Payments
+        </h2>
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-black/50">Select order type: </p>
+          <Select
+            value={selectedOrderType}
+            onValueChange={(val) => setSelectedOrderType(val)}
+          >
+            <SelectTrigger className="h-9 w-40 bg-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={null}>All</SelectItem>
+              <SelectItem value="PLACED">Placed</SelectItem>
+              <SelectItem value="APPROVED">Approved</SelectItem>
+              <SelectItem value="SHIPPED">Shipped</SelectItem>
+              <SelectItem value="DELIVERED">Delivered</SelectItem>
+              <SelectItem value="CANCELLED">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
       {orders.map((order) => {
         const address = getAddress(order);
+        if (selectedOrderType !== null && order.status !== selectedOrderType) {
+          return null;
+        }
         return (
           <Card key={order.id} className="border-border/50">
             <CardHeader className="flex flex-col gap-2 pb-3 sm:flex-row sm:items-center sm:justify-between">
