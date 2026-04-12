@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Minus, Plus, ArrowLeft, Star } from "lucide-react";
+import {
+  ShoppingCart,
+  Minus,
+  Plus,
+  ArrowLeft,
+  Star,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,6 +43,21 @@ export default function ProductDetail() {
   const { addToCart } = useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const prev = () =>
+    setActiveIndex(
+      (i) => (i - 1 + product.imageUrls.length) % product.imageUrls.length,
+    );
+
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const next = () => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setActiveIndex((i) => (i + 1) % product.imageUrls.length);
+    setTimeout(() => setIsTransitioning(false), 500);
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -114,19 +137,71 @@ export default function ProductDetail() {
       >
         <ArrowLeft className="h-4 w-4" /> Back to Products
       </Link>
-
       <div className="mt-4 grid gap-8 lg:grid-cols-2">
         <AnimatedSection direction="left">
-          <div className="max-w-md overflow-hidden rounded-xl bg-secondary/30 p-4 transition-transform duration-300 hover:scale-[1.02]">
-            <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg">
-              <img
-                src={product.imageUrls[0]}
-                alt={product.name}
-                className="h-full w-full object-cover"
-                width={800}
-                height={800}
-              />
-            </div>
+          <div className="relative max-w-md overflow-hidden rounded-xl bg-secondary/30 p-4">
+            {product.imageUrls.length > 0 ? (
+              <>
+                <div className="aspect-square overflow-hidden rounded-lg">
+                  <div
+                    className="flex h-full transition-transform duration-500 ease-in-out"
+                    style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+                  >
+                    {product.imageUrls.map((image, i) => (
+                      <div key={i} className="h-full w-full shrink-0">
+                        <img
+                          src={image}
+                          alt={`${product.name} ${i + 1}`}
+                          className="h-full w-full object-cover"
+                          width={800}
+                          height={800}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Arrow Buttons */}
+                {product.imageUrls.length > 1 && (
+                  <>
+                    <button
+                      onClick={prev}
+                      className="absolute left-6 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-background/80 shadow-md backdrop-blur-sm transition hover:bg-background"
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={next}
+                      className="absolute right-6 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-background/80 shadow-md backdrop-blur-sm transition hover:bg-background"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+
+                    {/* Bottom Dot Indicators */}
+                    <div className="mt-3 flex justify-center gap-1.5">
+                      {product.imageUrls.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setActiveIndex(i)}
+                          className={`h-1.5 rounded-full transition-all duration-300 ${
+                            i === activeIndex
+                              ? "w-4 bg-primary"
+                              : "w-1.5 bg-primary/30"
+                          }`}
+                          aria-label={`Go to image ${i + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <div className="flex h-96 items-center justify-center bg-secondary/50 text-sm text-muted-foreground">
+                No image available
+              </div>
+            )}
           </div>
         </AnimatedSection>
 
