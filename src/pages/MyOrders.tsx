@@ -112,7 +112,9 @@ export default function MyOrders() {
       <div className="space-y-4">
         {orders.map((order) => {
           const config =
-            statusConfig[order.status] ?? statusConfig.pending_payment;
+            statusConfig[order.status] ?? statusConfig.PENDING_PAYMENT;
+          const paymentFailed =
+            order.status === "CANCELLED" && order.paymentStatus === "UNPAID";
           const address = getAddress(order);
           return (
             <Card key={order.id} className="overflow-hidden border-border/60">
@@ -133,13 +135,24 @@ export default function MyOrders() {
                       })}
                     </p>
                   </div>
-                  <Badge
-                    variant={config.variant}
-                    className="flex w-fit items-center gap-1.5 px-3 py-1"
-                  >
-                    {config.icon}
-                    {config.label}
-                  </Badge>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {paymentFailed && (
+                      <Badge
+                        variant="destructive"
+                        className="flex w-fit items-center gap-1.5 px-3 py-1"
+                      >
+                        <XCircle className="h-4 w-4" />
+                        Payment Failed
+                      </Badge>
+                    )}
+                    <Badge
+                      variant={config.variant}
+                      className="flex w-fit items-center gap-1.5 px-3 py-1"
+                    >
+                      {config.icon}
+                      {config.label}
+                    </Badge>
+                  </div>
                 </div>
 
                 <Separator className="my-4" />
