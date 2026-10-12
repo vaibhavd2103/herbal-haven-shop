@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Cart() {
   const {
@@ -21,9 +22,32 @@ export default function Cart() {
     totalPrice,
     loading,
   } = useCart();
+  const { isAuthenticated } = useAuth();
   const anyPending = items.some(({ product }) => isPending(product.id));
 
   const shipping = totalPrice > 500 ? 0 : 49;
+
+  if (!isAuthenticated) {
+    return (
+      <div className="container mx-auto flex flex-col items-center px-4 py-20 text-center">
+        <ShoppingBag className="mb-4 h-16 w-16 text-muted-foreground/40" />
+        <h1 className="font-serif text-2xl font-bold">
+          Login to View Your Cart
+        </h1>
+        <p className="mt-2 text-muted-foreground">
+          Sign in to add items to your cart and place orders.
+        </p>
+        <div className="mt-6 flex gap-3">
+          <Link to="/login">
+            <Button>Login</Button>
+          </Link>
+          <Link to="/products">
+            <Button variant="outline">Browse Products</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
