@@ -59,7 +59,7 @@ export function CartProvider({
 }: {
   children: ReactNode;
   isAuthenticated: boolean;
-  user: User;
+  user: User | null;
 }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -70,7 +70,7 @@ export function CartProvider({
 
   const refreshCart = useCallback(async () => {
     // Don't call cart API if user is not logged in
-    if (!isAuthenticated || user.role !== "CUSTOMER") {
+    if (!isAuthenticated || user?.role !== "CUSTOMER") {
       setItems([]);
       return;
     }
@@ -90,7 +90,7 @@ export function CartProvider({
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, user.role]);
+  }, [isAuthenticated, user?.role]);
 
   useEffect(() => {
     void refreshCart();
