@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart } from "lucide-react";
+import { Loader2, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
@@ -8,19 +8,22 @@ import type { Product } from "@/lib/data";
 import { toast } from "sonner";
 
 export default function ProductCard({ product }: { product: Product }) {
-  const { addToCart } = useCart();
+  const { addToCart, isPending } = useCart();
+  const adding = isPending(product.id);
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  const handleAdd = (e: React.MouseEvent) => {
+  const handleAdd = async (e: React.MouseEvent) => {
     e.preventDefault();
+    if (adding) return;
     if (!isAuthenticated) {
       toast.error("Please login to add items to cart");
       navigate("/login");
       return;
     }
-    void addToCart(product);
-    toast.success(`${product.name} added to cart`);
+    if (await addToCart(product)) {
+      toast.success(`${product.name} added to cart`);
+    }
   };
 
   return (
@@ -53,8 +56,25 @@ export default function ProductCard({ product }: { product: Product }) {
                 <span className="font-normal line-through">{product.mrp}</span>
               </span>
             </span>
-            <Button size="sm" onClick={handleAdd} className="h-8 gap-1 text-xs">
-              <ShoppingCart className="h-3 w-3" /> Add
+            <Button
+              size="sm"
+              onClick={handleAdd}
+              // aria-disabled (not disabled): this button sits inside a <Link>, and
+              // clicks on a truly disabled button fall through and navigate.
+              aria-disabled={adding}
+              aria-busy={adding}
+              className="h-8 w-[5.5rem] shrink-0 gap-1 text-xs aria-disabled:cursor-not-allowed aria-disabled:opacity-60"
+            >
+              {/* pointer-events-none: the icon is swapped while loading, and a click
+                  whose target node was removed would fall through to the <Link>. */}
+              <span className="pointer-events-none inline-flex items-center gap-1">
+                {adding ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <ShoppingCart className="h-3 w-3" />
+                )}
+                {adding ? "Adding" : "Add"}
+              </span>
             </Button>
           </div>
         </CardContent>

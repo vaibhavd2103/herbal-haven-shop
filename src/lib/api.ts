@@ -106,38 +106,26 @@ export async function addToCartAPI(
   productId: string,
   quantity: number,
 ): Promise<CartItem[]> {
-  try {
-    const res = await api.post("/cart/items", { productId, quantity });
-    return res.data.cart.items ?? [];
-  } catch {
-    return [];
-  }
+  const res = await api.post("/cart/items", { productId, quantity });
+  return res.data.cart.items ?? [];
 }
 
 export async function removeFromCartAPI(
   productId: string,
   quantity: number,
 ): Promise<CartItem[]> {
-  try {
-    const res = await api.delete(`/cart/itemsRemove`, {
-      data: { productId, quantity },
-    });
-    return res.data.cart.items ?? [];
-  } catch {
-    return [];
-  }
+  const res = await api.delete(`/cart/itemsRemove`, {
+    data: { productId, quantity },
+  });
+  return res.data.cart.items ?? [];
 }
 
 export async function updateCartQuantityAPI(
   productId: string,
   quantity: number,
 ): Promise<CartItem[]> {
-  try {
-    const res = await api.post("/cart/items", { productId, quantity });
-    return res.data.cart.items ?? [];
-  } catch {
-    return [];
-  }
+  const res = await api.post("/cart/items", { productId, quantity });
+  return res.data.cart.items ?? [];
 }
 
 export async function clearCartAPI(userID: string): Promise<void> {

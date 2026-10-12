@@ -4,6 +4,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
   type ReactNode,
 } from "react";
 import type { Product } from "@/lib/data";
@@ -14,6 +15,7 @@ import {
   updateCartQuantityAPI,
   clearCartAPI,
 } from "@/lib/api";
+import { toast } from "sonner";
 import { User } from "./AuthContext";
 
 export interface CartItem {
@@ -23,9 +25,11 @@ export interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product, quantity?: number) => Promise<void>;
-  removeFromCart: (productId: string, quantity: number) => Promise<void>;
-  updateQuantity: (productId: string, quantity: number) => Promise<void>;
+  /** Resolve to true when the server confirmed the change, false if it was skipped or failed. */
+  addToCart: (product: Product, quantity?: number) => Promise<boolean>;
+  removeFromCart: (productId: string, quantity: number) => Promise<boolean>;
+  updateQuantity: (productId: string, quantity: number) => Promise<boolean>;
+  isPending: (productId: string) => boolean;
   clearCart: (userID: string) => Promise<void>;
   totalItems: number;
   totalPrice: number;
@@ -35,9 +39,10 @@ interface CartContextType {
 
 const emptyCartContext: CartContextType = {
   items: [],
-  addToCart: async () => {},
-  removeFromCart: async () => {},
-  updateQuantity: async () => {},
+  addToCart: async () => false,
+  removeFromCart: async () => false,
+  updateQuantity: async () => false,
+  isPending: () => false,
   clearCart: async () => {},
   totalItems: 0,
   totalPrice: 0,
@@ -85,82 +90,83 @@ export function CartProvider({
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user.role]);
 
   useEffect(() => {
     void refreshCart();
   }, [refreshCart]);
 
-  const addToCart = async (product: Product, quantity = 1) => {
-    if (!isAuthenticated) return;
+  // Product ids with a request in flight. The ref is the synchronous guard (state
+  // lags a render behind, so rapid double-clicks would slip through it); the state
+  // drives the loading UI.
+  const inFlightRef = useRef<Set<string>>(new Set());
+  const [pendingIds, setPendingIds] = useState<ReadonlySet<string>>(new Set());
+  const itemsRef = useRef<CartItem[]>([]);
+  itemsRef.current = items;
 
-    setItems((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
-      const updated = existing
-        ? prev.map((item) =>
-            item.product.id === product.id
-              ? { ...item, quantity: item.quantity + quantity }
-              : item,
-          )
-        : [...prev, { product, quantity }];
+  const isPending = useCallback(
+    (productId: string) => pendingIds.has(productId),
+    [pendingIds],
+  );
 
-      syncToLocal(updated);
-      return updated;
-    });
+  const applyServerCart = (apiItems: CartItem[]) => {
+    setItems(apiItems);
+    syncToLocal(apiItems);
+  };
 
+  /**
+   * Runs one cart mutation per product at a time. Extra clicks while a request is
+   * in flight are ignored (the buttons are disabled too), and the cart only ever
+   * shows what the server confirmed, so the numbers never flicker or go stale.
+   */
+  const runMutation = async (
+    productId: string,
+    request: () => Promise<CartItem[]>,
+    errorMessage: string,
+  ): Promise<boolean> => {
+    if (inFlightRef.current.has(productId)) return false;
+    inFlightRef.current.add(productId);
+    setPendingIds(new Set(inFlightRef.current));
     try {
-      const apiItems = await addToCartAPI(product.id, quantity);
-      if (apiItems.length > 0) {
-        setItems(apiItems);
-        syncToLocal(apiItems);
-      }
+      applyServerCart(await request());
+      return true;
     } catch (error) {
-      console.error("Failed to add to cart:", error);
+      console.error(errorMessage, error);
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      inFlightRef.current.delete(productId);
+      setPendingIds(new Set(inFlightRef.current));
     }
   };
 
-  const removeFromCart = async (productId: string, quantity: number) => {
-    setItems((prev) => {
-      const updated =
-        quantity === 0
-          ? prev.filter((item) => item.product.id !== productId)
-          : prev.map((item) =>
-              item.product.id === productId ? { ...item, quantity } : item,
-            );
-      syncToLocal(updated);
-      return updated;
-    });
+  const currentQuantity = (productId: string) =>
+    itemsRef.current.find((item) => item.product.id === productId)?.quantity ??
+    0;
 
-    try {
-      const apiItems = await removeFromCartAPI(productId, quantity);
-      if (apiItems.length > 0) {
-        setItems(apiItems);
-        syncToLocal(apiItems);
-      }
-    } catch (error) {
-      console.error("Failed to remove from cart:", error);
-    }
+  const addToCart = (product: Product, quantity = 1) => {
+    if (!isAuthenticated) return Promise.resolve(false);
+    // The API sets the quantity, so send the new total, not the increment.
+    return runMutation(
+      product.id,
+      () => addToCartAPI(product.id, currentQuantity(product.id) + quantity),
+      "Could not add to cart. Please try again.",
+    );
   };
 
-  const updateQuantity = async (productId: string, quantity: number) => {
-    setItems((prev) => {
-      const updated = prev.map((item) =>
-        item.product.id === productId ? { ...item, quantity } : item,
-      );
-      syncToLocal(updated);
-      return updated;
-    });
+  const removeFromCart = (productId: string, quantity: number) =>
+    runMutation(
+      productId,
+      () => removeFromCartAPI(productId, quantity),
+      "Could not update your cart. Please try again.",
+    );
 
-    try {
-      const apiItems = await updateCartQuantityAPI(productId, quantity);
-      if (apiItems.length > 0) {
-        setItems(apiItems);
-        syncToLocal(apiItems);
-      }
-    } catch (error) {
-      console.error("Failed to update cart quantity:", error);
-    }
-  };
+  const updateQuantity = (productId: string, quantity: number) =>
+    runMutation(
+      productId,
+      () => updateCartQuantityAPI(productId, quantity),
+      "Could not update your cart. Please try again.",
+    );
 
   const clearCart = async (userID: string) => {
     setItems([]);
@@ -185,6 +191,7 @@ export function CartProvider({
         addToCart,
         removeFromCart,
         updateQuantity,
+        isPending,
         clearCart,
         totalItems,
         totalPrice,
