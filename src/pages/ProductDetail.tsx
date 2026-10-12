@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
+  Loader2,
   ShoppingCart,
   Minus,
   Plus,
@@ -40,7 +41,7 @@ export default function ProductDetail() {
   const [reviewText, setReviewText] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
   const [submitting, setSubmitting] = useState(false);
-  const { addToCart } = useCart();
+  const { addToCart, isPending } = useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -87,15 +88,19 @@ export default function ProductDetail() {
     );
   }
 
-  const handleAdd = () => {
+  const adding = isPending(product.id);
+
+  const handleAdd = async () => {
+    if (adding) return;
     if (!isAuthenticated) {
       toast.error("Please login to add items to cart");
       navigate("/login");
       return;
     }
-    void addToCart(product, qty);
-    toast.success(`${product.name} added to cart`);
-    setQty(1);
+    if (await addToCart(product, qty)) {
+      toast.success(`${product.name} added to cart`);
+      setQty(1);
+    }
   };
 
   const handleReviewSubmit = async () => {
@@ -235,8 +240,10 @@ export default function ProductDetail() {
             <div className="mt-6 flex items-center gap-4">
               <div className="flex items-center rounded-md border">
                 <button
-                  className="px-3 py-2 transition-colors hover:bg-secondary"
+                  className="px-3 py-2 transition-colors hover:bg-secondary disabled:opacity-50"
                   onClick={() => setQty(Math.max(1, qty - 1))}
+                  disabled={adding || qty <= 1}
+                  aria-label="Decrease quantity"
                 >
                   <Minus className="h-4 w-4" />
                 </button>
@@ -244,14 +251,26 @@ export default function ProductDetail() {
                   {qty}
                 </span>
                 <button
-                  className="px-3 py-2 transition-colors hover:bg-secondary"
+                  className="px-3 py-2 transition-colors hover:bg-secondary disabled:opacity-50"
                   onClick={() => setQty(qty + 1)}
+                  disabled={adding}
+                  aria-label="Increase quantity"
                 >
                   <Plus className="h-4 w-4" />
                 </button>
               </div>
-              <Button onClick={handleAdd} className="gap-2">
-                <ShoppingCart className="h-4 w-4" /> Add to Cart
+              <Button
+                onClick={handleAdd}
+                disabled={adding}
+                aria-busy={adding}
+                className="min-w-[9rem] gap-2"
+              >
+                {adding ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ShoppingCart className="h-4 w-4" />
+                )}
+                {adding ? "Adding..." : "Add to Cart"}
               </Button>
             </div>
 

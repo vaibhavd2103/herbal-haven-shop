@@ -1,13 +1,27 @@
 import { Link } from "react-router-dom";
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
+import {
+  Minus,
+  Plus,
+  Trash2,
+  ShoppingBag,
+  ArrowRight,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/contexts/CartContext";
 
 export default function Cart() {
-  const { items, updateQuantity, removeFromCart, totalPrice, loading } =
-    useCart();
+  const {
+    items,
+    updateQuantity,
+    removeFromCart,
+    isPending,
+    totalPrice,
+    loading,
+  } = useCart();
+  const anyPending = items.some(({ product }) => isPending(product.id));
 
   const shipping = totalPrice > 500 ? 0 : 49;
 
@@ -44,58 +58,82 @@ export default function Cart() {
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
         {/* Items */}
         <div className="space-y-4 lg:col-span-2">
-          {items.map(({ product, quantity }) => (
-            <Card key={product.id}>
-              <CardContent className="flex items-center gap-4 p-4">
-                <div className="h-20 w-20 flex-shrink-0 rounded-md bg-secondary flex items-center justify-center p-2">
-                  <img
-                    src={product.imageUrls[0]}
-                    alt={product.name}
-                    className="h-full w-full object-cover opacity-60 rounded-sm"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <Link
-                    to={`/products/${product.id}`}
-                    className="font-serif text-sm font-semibold hover:text-primary line-clamp-1"
-                  >
-                    {product.name}
-                  </Link>
-                  {/* <p className="text-xs text-muted-foreground">
+          {items.map(({ product, quantity }) => {
+            const busy = isPending(product.id);
+            return (
+              <Card
+                key={product.id}
+                className={
+                  busy ? "opacity-70 transition-opacity" : "transition-opacity"
+                }
+                aria-busy={busy}
+              >
+                <CardContent className="flex items-center gap-4 p-4">
+                  <div className="h-20 w-20 flex-shrink-0 rounded-md bg-secondary flex items-center justify-center p-2">
+                    <img
+                      src={product.imageUrls[0]}
+                      alt={product.name}
+                      className="h-full w-full object-cover opacity-60 rounded-sm"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      to={`/products/${product.id}`}
+                      className="font-serif text-sm font-semibold hover:text-primary line-clamp-1"
+                    >
+                      {product.name}
+                    </Link>
+                    {/* <p className="text-xs text-muted-foreground">
                     {product.currency}
                   </p> */}
-                  <p className="mt-1 font-serif font-bold text-primary">
-                    ₹{product.price}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center rounded-md border">
-                    <button
-                      disabled={quantity <= 1}
-                      className="px-2 py-1 hover:bg-secondary"
-                      onClick={() => removeFromCart(product.id, quantity - 1)}
-                    >
-                      <Minus className="h-3 w-3" />
-                    </button>
-                    <span className="w-8 text-center text-sm">{quantity}</span>
-                    <button
-                      className="px-2 py-1 hover:bg-secondary"
-                      onClick={() => updateQuantity(product.id, quantity + 1)}
-                    >
-                      <Plus className="h-3 w-3" />
-                    </button>
+                    <p className="mt-1 font-serif font-bold text-primary">
+                      ₹{product.price}
+                    </p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeFromCart(product.id, 0)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center rounded-md border">
+                      <button
+                        disabled={busy || quantity <= 1}
+                        className="px-2 py-1 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={() =>
+                          void removeFromCart(product.id, quantity - 1)
+                        }
+                        aria-label="Decrease quantity"
+                      >
+                        <Minus className="h-3 w-3" />
+                      </button>
+                      <span className="flex w-8 items-center justify-center text-sm">
+                        {busy ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          quantity
+                        )}
+                      </span>
+                      <button
+                        disabled={busy}
+                        className="px-2 py-1 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={() =>
+                          void updateQuantity(product.id, quantity + 1)
+                        }
+                        aria-label="Increase quantity"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </button>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={busy}
+                      onClick={() => void removeFromCart(product.id, 0)}
+                      aria-label="Remove item"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Summary */}
@@ -123,11 +161,17 @@ export default function Cart() {
                 <span className="text-primary">₹{totalPrice + shipping}</span>
               </div>
             </div>
-            <Link to="/checkout">
-              <Button className="mt-6 w-full gap-2">
-                Proceed to Pay <ArrowRight className="h-4 w-4" />
+            {anyPending ? (
+              <Button className="mt-6 w-full gap-2" disabled>
+                <Loader2 className="h-4 w-4 animate-spin" /> Updating cart...
               </Button>
-            </Link>
+            ) : (
+              <Link to="/checkout">
+                <Button className="mt-6 w-full gap-2">
+                  Proceed to Pay <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -14,8 +14,7 @@ import AnimatedSection from "@/components/AnimatedSection";
 import { type Product } from "@/lib/data";
 import { useEffect, useState } from "react";
 import { fetchProducts, getAllReviews, Review } from "@/lib/api";
-import heroBg from "@/assets/hero-bg.jpg";
-import hero from "@/assets/hero.jpg";
+import HeroCarousel from "@/components/HeroCarousel";
 
 export default function Index() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -57,32 +56,22 @@ export default function Index() {
 
   return (
     <div>
-      <section className="relative overflow-hidden bg-primary/10 py-20 md:py-32">
-        <div className="absolute inset-0">
-          <img
-            src={hero}
-            alt="Botanical herbal product arrangement"
-            className="h-full w-full object-cover opacity-50"
-            width={1920}
-            height={800}
-          />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-background/60 to-background/90" />
-        <div className="container relative mx-auto px-4 text-center">
-          <div className="mx-auto max-w-2xl animate-fade-in">
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-secondary/60 py-12 md:py-20">
+        <div className="container relative mx-auto grid items-center gap-10 px-4 lg:grid-cols-2">
+          <div className="animate-fade-in text-center lg:text-left">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm text-foreground/70">
               <Leaf className="h-4 w-4 text-primary" /> Homemade Herbal Goodness
             </div>
-            <h1 className="font-serif text-4xl font-bold leading-tight text-foreground md:text-6xl">
+            <h1 className="font-serif text-4xl font-bold leading-tight text-foreground md:text-5xl">
               Natural homemade products that make daily care feel simple, safe,
               and beautiful.
             </h1>
             <p className="mt-4 text-lg text-muted-foreground md:text-xl">
               Discover RREVA CARE&apos;s range of homemade herbal products —
-              shampoos, soaps, face washes & more, made with love from
-              nature&apos;s finest ingredients.
+              hair oils, shampoos, soaps, face washes & more, made with love
+              from nature&apos;s finest ingredients.
             </p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
               <Link to="/products">
                 <Button size="lg" className="gap-2 text-base">
                   Shop Now <ArrowRight className="h-4 w-4" />
@@ -90,6 +79,7 @@ export default function Index() {
               </Link>
             </div>
           </div>
+          <HeroCarousel />
         </div>
       </section>
 
