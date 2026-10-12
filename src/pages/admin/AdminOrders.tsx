@@ -72,7 +72,7 @@ export default function AdminOrders() {
       setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
       toast({
         title: "Payment rejected",
-        description: `Order ${id} payment rejected.`,
+        description: `Order ${id} payment rejected and order cancelled.`,
         variant: "destructive",
       });
     } catch (err) {
@@ -123,9 +123,9 @@ export default function AdminOrders() {
         label: string;
       }
     > = {
-      pending_payment: { variant: "secondary", label: "Pending Payment" },
-      verified: { variant: "default", label: "Verified" },
-      rejected: { variant: "destructive", label: "Rejected" },
+      UNPAID: { variant: "secondary", label: "Unpaid" },
+      PAID: { variant: "default", label: "Paid" },
+      REFUNDED: { variant: "outline", label: "Refunded" },
     };
     const c = config[status] ?? { variant: "outline" as const, label: status };
     return <Badge variant={c.variant}>{c.label}</Badge>;
@@ -139,11 +139,12 @@ export default function AdminOrders() {
         label: string;
       }
     > = {
-      pending_payment: { variant: "secondary", label: "Pending Payment" },
-      placed: { variant: "outline", label: "Placed" },
-      shipped: { variant: "default", label: "Shipped" },
-      delivered: { variant: "default", label: "Delivered" },
-      cancelled: { variant: "destructive", label: "Cancelled" },
+      PENDING_PAYMENT: { variant: "secondary", label: "Pending Payment" },
+      PLACED: { variant: "outline", label: "Placed" },
+      APPROVED: { variant: "secondary", label: "Approved" },
+      SHIPPED: { variant: "default", label: "Shipped" },
+      DELIVERED: { variant: "default", label: "Delivered" },
+      CANCELLED: { variant: "destructive", label: "Cancelled" },
     };
     const c = config[status] ?? { variant: "outline" as const, label: status };
     return <Badge variant={c.variant}>{c.label}</Badge>;
@@ -250,7 +251,8 @@ export default function AdminOrders() {
               </p>
 
               <div className="flex flex-wrap items-center gap-2">
-                {order.paymentStatus === "UNPAID" && (
+                {order.paymentStatus === "UNPAID" &&
+                  order.status === "PENDING_PAYMENT" && (
                   <>
                     <Button
                       size="sm"
